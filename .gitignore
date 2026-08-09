@@ -18,7 +18,7 @@ __pycache__/
 .ruff_cache/
 .mypy_cache/
 
-# Internal files (generated, not for git)
+
 internals/
 results.json
 Mini_Project_Report.pdf
