@@ -1,5 +1,5 @@
 # LEACH vs PEGASIS: Simulation-Based Mini Project Report
-## Wireless Sensor and Ad-hoc Networks (CCE4145)
+## Wireless Sensor and Ad-hoc Networks
 
 ---
 
