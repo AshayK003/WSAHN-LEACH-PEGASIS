@@ -3,13 +3,13 @@
 venv/
 env/
 
-# IDE
+# IDE and editors
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# Python cache
+# Python cache and tooling
 __pycache__/
 *.py[cod]
 *$py.class
@@ -17,8 +17,9 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+.ipynb_checkpoints/
 
-
+# Internal files
 internals/
 results.json
 Mini_Project_Report.pdf
@@ -28,9 +29,19 @@ Mini_Project_Report.pdf
 dist/
 build/
 
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Logs and misc
+*.log
+
 # OS
 .DS_Store
 Thumbs.db
 nul
 
-# Keep public: *.gif, *.png, *.md, *.html, *.pdf, *.py, requirements.txt
+# Data (raw simulation output)
+*.csv
+*.npy
