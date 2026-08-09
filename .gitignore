@@ -1,12 +1,15 @@
+# Virtual environments
 .venv/
 venv/
 env/
 
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 
+# Python cache
 __pycache__/
 *.py[cod]
 *$py.class
@@ -15,17 +18,18 @@ __pycache__/
 .ruff_cache/
 .mypy_cache/
 
-results.json
-*.gif
-*.png
-Mini_Project_Report.pdf
-
+# Internal files (generated, not for git)
 internals/
+results.json
 
+# Build artifacts
+*.egg-info/
+dist/
+build/
+
+# OS
 .DS_Store
 Thumbs.db
 nul
 
-*.egg-info/
-dist/
-build/
+# Keep public: *.gif, *.png, *.md, *.html, *.pdf, *.py, requirements.txt
