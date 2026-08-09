@@ -1,15 +1,10 @@
-# Virtual environments
 .venv/
 venv/
 env/
-
-# IDE and editors
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# Python cache and tooling
 __pycache__/
 *.py[cod]
 *$py.class
@@ -18,30 +13,18 @@ __pycache__/
 .ruff_cache/
 .mypy_cache/
 .ipynb_checkpoints/
-
-# Internal files
 internals/
 results.json
 Mini_Project_Report.pdf
-
-# Build artifacts
 *.egg-info/
 dist/
 build/
-
-# Environment and secrets
 .env
 .env.*
 !.env.example
-
-# Logs and misc
 *.log
-
-# OS
 .DS_Store
 Thumbs.db
 nul
-
-# Data (raw simulation output)
 *.csv
 *.npy
