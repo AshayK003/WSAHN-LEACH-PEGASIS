@@ -21,6 +21,7 @@ __pycache__/
 # Internal files (generated, not for git)
 internals/
 results.json
+Mini_Project_Report.pdf
 
 # Build artifacts
 *.egg-info/
