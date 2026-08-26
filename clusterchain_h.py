@@ -23,7 +23,7 @@ import math
 import numpy as np
 from dataclasses import dataclass
 from typing import List, Optional, Set
-from energy import tx_energy, rx_energy, da_energy, PACKET_SIZE, E_ELEC, E_FS, E_MP
+from energy import tx_energy, rx_energy, da_energy, PACKET_SIZE, E_ELEC, E_FS, E_MP, in_range
 
 
 def _dist2(a, b):
@@ -338,6 +338,10 @@ class ClusterChainH:
                 delivered.discard(id(n))
                 continue
             d = n.distance_to(ch)
+            if not in_range(d):
+                n.consume(tx_energy(d))
+                delivered.discard(n.id)
+                continue
             if n.consume(tx_energy(d)):
                 delivered.discard(id(n))
                 continue
@@ -364,6 +368,11 @@ class ClusterChainH:
                 delivered.discard(h.id)
                 continue
             d = h.distance_to(nxt)
+            if not in_range(d):
+                h.consume(tx_energy(d))
+                delivered.discard(h.id)
+                broken = True
+                continue
             if h.consume(tx_energy(d)):
                 broken = True
                 for mid in members.get(h.id, []):
@@ -422,6 +431,11 @@ class ClusterChainH:
                     delivered.discard(id(c))
                     continue
                 d = c.distance_to(nxt)
+                if not in_range(d):
+                    c.consume(tx_energy(d))
+                    delivered.discard(c.id)
+                    broken = True
+                    continue
                 if c.consume(tx_energy(d)):
                     broken = True
                     delivered.discard(id(c))

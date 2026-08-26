@@ -4,7 +4,7 @@ import math
 import numpy as np
 from dataclasses import dataclass, field
 from typing import List, Optional
-from energy import tx_energy, rx_energy, da_energy, PACKET_SIZE
+from energy import tx_energy, rx_energy, da_energy, PACKET_SIZE, in_range
 
 
 @dataclass
@@ -117,6 +117,10 @@ class PEGASIS:
                 delivered.discard(node.id)
                 continue
             d = node.distance_to(next_node)
+            if not in_range(d):
+                node.consume(tx_energy(d))
+                delivered.discard(node.id)
+                continue
             if node.consume(tx_energy(d)):
                 delivered.discard(node.id)
                 continue
