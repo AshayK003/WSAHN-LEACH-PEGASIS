@@ -92,51 +92,55 @@ class PEGASIS:
         self._build_chain()
 
     def _transmit_round(self) -> dict:
-        """One round: data flows along chain to leader, leader to sink"""
-        total_tx = 0
-        total_rx = 0
-        packets_sent = 0
-        packets_received = 0
-        delays = []
-
+        """One round: data flows along chain to leader, leader to sink.
+        PDR = source nodes whose data reached the sink / total alive nodes
+        (consistent across all protocols, unlike the original per-hop count)."""
         alive = [n for n in self.nodes if n.alive]
         if not alive:
-            return {'tx_energy': 0, 'rx_energy': 0, 'packets_sent': 0, 'packets_received': 0, 'avg_delay': 0}
+            return {'tx_energy': 0, 'rx_energy': 0, 'packets_sent': 0,
+                    'packets_received': 0, 'avg_delay': 0}
 
-        # Each alive node generates packet, sends to next in chain
+        sent = len(alive)
+        delivered = {n.id for n in alive}
+        total_tx = 0.0
+        total_rx = 0.0
+        delays = []
+
+        # Each alive node sends to next in chain; cascade: if any hop dies,
+        # everything downstream of it (and the node itself) is lost.
         for node in alive:
             if node.next_id is None:  # leader
                 continue
             next_node = next((n for n in alive if n.id == node.next_id), None)
-            if not next_node or not next_node.alive:
+            if next_node is None or not next_node.alive:
+                # cannot forward -> node's own data and any still upstream is lost
+                delivered.discard(node.id)
                 continue
-
             d = node.distance_to(next_node)
             if node.consume(tx_energy(d)):
+                delivered.discard(node.id)
                 continue
-            if next_node.consume(rx_energy()):
-                continue
-            if next_node.consume(da_energy()):  # fusion at each hop
+            if next_node.consume(rx_energy() + da_energy()):
+                delivered.discard(next_node.id)
                 continue
             total_tx += tx_energy(d)
             total_rx += rx_energy() + da_energy()
-            packets_sent += 1
 
         # Leader transmits fused data to sink
         leader = next((n for n in alive if n.is_leader), None)
         if leader:
             d = leader.distance_to(self.sink)
-            if not leader.consume(tx_energy(d)):
+            if leader.consume(tx_energy(d)):
+                delivered.clear()
+            else:
                 total_tx += tx_energy(d)
-                packets_sent += 1
-                packets_received += 1
                 delays.append(len(alive))  # delay ~ chain length
 
         return {
             'tx_energy': total_tx,
             'rx_energy': total_rx,
-            'packets_sent': packets_sent,
-            'packets_received': packets_received,
+            'packets_sent': sent,
+            'packets_received': len(delivered),
             'avg_delay': np.mean(delays) if delays else 0,
         }
 

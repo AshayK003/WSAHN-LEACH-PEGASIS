@@ -90,48 +90,62 @@ class LEACH:
                 node.ch_id = nearest.id
 
     def _transmit_round(self) -> dict:
-        """One round of data transmission, returns metrics"""
-        total_tx = 0
-        total_rx = 0
-        packets_sent = 0
-        packets_received = 0
+        """One round of data transmission. PDR = source nodes whose data reached
+        the sink / total alive source nodes (consistent across all protocols)."""
+        alive = [n for n in self.nodes if n.alive]
+        if not alive:
+            return {'tx_energy': 0, 'rx_energy': 0, 'packets_sent': 0,
+                    'packets_received': 0, 'avg_delay': 0}
+
+        sent = len(alive)
+        delivered = {n.id for n in alive}
+        total_tx = 0.0
+        total_rx = 0.0
         delays = []
 
+        # map cluster head -> member ids (for cascade invalidation)
+        members = {}
+        for n in alive:
+            if not n.is_ch and n.ch_id is not None:
+                members.setdefault(n.ch_id, []).append(n.id)
+
         # Non-CH nodes transmit to CH
-        for node in self.nodes:
-            if not node.alive or node.is_ch or node.ch_id is None:
+        for node in alive:
+            if node.is_ch or node.ch_id is None:
                 continue
-            ch = next((n for n in self.nodes if n.id == node.ch_id), None)
-            if ch and ch.alive:
-                d = node.distance_to(ch)
-                if node.consume(tx_energy(d)):
-                    continue
-                if ch.consume(rx_energy()):
-                    continue
-                if ch.consume(da_energy()):
-                    continue
-                total_tx += tx_energy(d)
-                total_rx += rx_energy() + da_energy()
-                packets_sent += 1
-                packets_received += 1  # node→CH delivery counted
+            ch = next((n for n in alive if n.id == node.ch_id), None)
+            if ch is None or not ch.alive:
+                continue
+            d = node.distance_to(ch)
+            if node.consume(tx_energy(d)):
+                delivered.discard(node.id)
+                continue
+            if ch.consume(rx_energy() + da_energy()):
+                for m in members.get(ch.id, []):
+                    delivered.discard(m)
+                delivered.discard(ch.id)
+                continue
+            total_tx += tx_energy(d)
+            total_rx += rx_energy() + da_energy()
 
         # CHs transmit aggregated data to sink
-        for node in self.nodes:
-            if not node.alive or not node.is_ch:
+        for node in alive:
+            if not node.is_ch:
                 continue
             d = node.distance_to(self.sink)
             if node.consume(tx_energy(d)):
+                for m in members.get(node.id, []):
+                    delivered.discard(m)
+                delivered.discard(node.id)
                 continue
             total_tx += tx_energy(d)
-            packets_sent += 1
-            packets_received += 1
-            delays.append(1)  # simplified: 1 hop delay
+            delays.append(1)
 
         return {
             'tx_energy': total_tx,
             'rx_energy': total_rx,
-            'packets_sent': packets_sent,
-            'packets_received': packets_received,
+            'packets_sent': sent,
+            'packets_received': len(delivered),
             'avg_delay': np.mean(delays) if delays else 0,
         }
 
