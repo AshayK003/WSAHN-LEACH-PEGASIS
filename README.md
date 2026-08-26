@@ -39,20 +39,31 @@ Network lifetime and delivery metrics, averaged over 3 seeded runs
 | 50% nodes dead (round) | 819 | 1183 | 1156 | ClusterChain ~ PEGASIS, +41% vs LEACH |
 | Last node dead (round) | 839 | 1200 | 1160 | ClusterChain matches PEGASIS within noise |
 | Network lifetime vs LEACH | 1.00x | 1.44x | 1.41x | ClusterChain roughly ties PEGASIS |
-| Average delay (hops) | ~1 | ~100 | ~100 (dense) / 5-7 (clustered) | ClusterChain's delay fix |
+| Average delay (hops) | ~1 | ~100 | 5-7 (clustered) / ~100 (dense) | clustered mode fixes PEGASIS delay; dense matches it |
 | Packet Delivery Ratio | high, collapses at death | periodic drops to ~0.65 | stays ~1.0 until near death | consistent delivery metric |
 
 **Honest summary:** ClusterChain does not strictly beat PEGASIS on raw network
 lifetime — PEGASIS's dense greedy chain is near-optimal for this energy model,
 and the swept parameter grid (cluster-head count, energy weight, cluster-head
 selection strategy, terminus rule) confirmed PEGASIS stays ahead within ~2%.
-ClusterChain's contribution is on the *multi-objective* front: it matches
-PEGASIS on lifetime while (a) keeping end-to-end delay low when cluster heads are
-used (5-7 hops vs ~100), (b) rotating the long-haul leader so no single node is
-a permanent hotspot, and (c) reporting a consistent packet-delivery ratio across
-all protocols. Compared with LEACH it is ~1.4x longer-lived and far more stable.
+ClusterChain's contribution is on the *multi-objective* front:
 
-The parameter sweep that selected these defaults is in `sweep.py`.
+- **Clustered mode (k = 5-7 cluster heads):** 5-15x lower end-to-end delay than
+  PEGASIS (5-7 hops vs ~100) at the cost of ~5% lifetime (1114-1128 vs 1183).
+- **Dense mode (k = N):** matches PEGASIS on lifetime (1162 vs 1183) and delay,
+  but with a rotated terminus instead of a permanent leader hotspot.
+- **Analytical k\* tuning:** the cluster-head count is derived from the Heinzelman
+  energy model (see `derivation.md`); the model's per-round energy minimum at
+  k\*=4 for N=100 anchors the delay-favoring design point, while the chain length
+  k is the single knob that trades delay against lifetime. This makes ClusterChain
+  a reproducible *unification* of the LEACH and PEGASIS design spaces (recovers
+  LEACH at k=N non-clustered, PEGASIS at k=N dense) rather than an unprincipled
+  "yet another hybrid."
+- Compared with LEACH it is ~1.4x longer-lived and far more stable; PDR stays
+  ~1.0 until near network death versus LEACH's collapse.
+
+The parameter sweep that selected these defaults is in `sweep.py`; the closed-form
+k\* derivation is in `derivation.md`.
 
 ## Quick Start
 
@@ -75,6 +86,9 @@ python run.py --nodes 100 --rounds 2000 --runs 3
 ├── clusterchain.py    # ClusterChain (hybrid) protocol implementation
 ├── run.py             # Experiment runner + 3-way comparison + dashboard
 ├── sweep.py           # Parameter sweep to select ClusterChain defaults
+├── derive_kstar.py    # Closed-form optimal chain length k* derivation
+├── derivation.md      # Math: energy-optimal k* and the delay/lifetime tradeoff
+├── kstar_result.txt   # Numeric output of derive_kstar.py
 ├── results.json       # Raw per-run data for all three protocols
 ├── comparison.png     # 6-panel comparison (lifetime, energy, PDR, delay, throughput, loss)
 └── dashboard.png      # Lifetime milestone bar chart

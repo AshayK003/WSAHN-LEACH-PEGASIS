@@ -17,7 +17,40 @@ import math
 import numpy as np
 from dataclasses import dataclass, field
 from typing import List, Optional, Set
-from energy import tx_energy, rx_energy, da_energy, PACKET_SIZE
+from energy import tx_energy, rx_energy, da_energy, PACKET_SIZE, E_ELEC, E_FS, E_MP
+
+
+def optimal_k(n_alive: int) -> int:
+    """Analytically-derived energy-optimal chain length k* for n_alive nodes.
+
+    Minimises the per-round energy E(k) from the Heinzelman first-order model
+    (see derivation.md). The minimum sits at a small k (3-4 for typical N)
+    because the expensive multipath sink hop is shared across all nodes and the
+    two distance-squared terms both fall with k up to that point. Used to set
+    the cluster-head count adaptively as nodes die.
+    """
+    if n_alive <= 3:
+        return max(1, n_alive - 1)
+    a = 100.0 / (2 * (3.141592653589793 ** 0.5))
+    b = 50.0
+    D = 125.0
+    L = PACKET_SIZE
+    e_rx = L * E_ELEC
+    e_da = L * 5e-9
+    e_sink = L * E_ELEC + L * E_MP * (D ** 4)
+
+    def e_round(k):
+        k = max(1, min(k, n_alive))
+        d_m2 = a * a / k
+        e_member = (n_alive - k) * (L * E_ELEC + L * E_FS * d_m2)
+        e_ch_rx = n_alive * e_rx
+        e_da_tot = n_alive * e_da
+        d_c2 = b * b / (k * k)
+        e_chain = (k - 1) * (L * E_ELEC + L * E_FS * d_c2)
+        e_chain_rx = k * e_rx
+        return e_member + e_ch_rx + e_da_tot + e_chain + e_chain_rx + e_sink
+
+    return min(range(1, n_alive + 1), key=e_round)
 
 
 @dataclass
@@ -58,6 +91,7 @@ class ClusterChain:
         w_energy: float = 0.7,
         ch_mode: str = 'sink',
         terminus: str = 'energy',
+        adaptive_k: bool = True,
     ):
         self.n = n_nodes
         self.field_x = field_x
@@ -68,6 +102,7 @@ class ClusterChain:
         self.w_energy = w_energy
         self.ch_mode = ch_mode  # 'sink' | 'spread' | 'coverage' | 'dense'
         self.terminus = terminus  # 'energy' | 'sink'
+        self.adaptive_k = adaptive_k  # recompute k* from energy model as nodes die
         self.round = 0
         self.alive_count = n_nodes
         self.history = []  # (round, alive, total_energy, pdr, avg_delay, packets_sent, packets_received)
@@ -287,6 +322,8 @@ class ClusterChain:
 
     def step(self) -> dict:
         self.round += 1
+        if self.adaptive_k and self.ch_mode != 'dense':
+            self.n_ch = optimal_k(self.alive_count)
         self._elect_cluster_heads()
         self._form_clusters()
         self._build_ch_chain()

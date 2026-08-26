@@ -41,7 +41,7 @@ def run_experiment(n_nodes=100, max_rounds=2000, seed=42, n_runs=3):
 
         np.random.seed(s)
         cc = ClusterChain(n_nodes=n_nodes, ch_mode='dense', terminus='sink',
-                          w_energy=0.7, n_ch=5)
+                          w_energy=0.7, n_ch=5, adaptive_k=False)
         cc_hist = cc.run(max_rounds)
         cc_histories.append(cc_hist)
         print(f"  ClusterChain: {len(cc_hist)} rounds")
@@ -139,10 +139,13 @@ def plot_comparison(leach_histories, pegasis_histories, cc_histories, output_dir
     ax.set_title('Network Lifetime Milestones: LEACH vs PEGASIS vs ClusterChain')
     ax.legend()
     ax.grid(True, axis='y', alpha=0.3)
-    for i, vals in enumerate([(lm[0], lm[1], lm[2]), (pm[0], pm[1], pm[2]), (cm[0], cm[1], cm[2])]):
+    for i, (offset, vals) in enumerate([
+        (-w, [lm[0], lm[1], lm[2]]),
+        (0, [pm[0], pm[1], pm[2]]),
+        (w, [cm[0], cm[1], cm[2]]),
+    ]):
         for j, v in enumerate(vals):
-            ax.text((i - 1) * w + x[j] if i == 0 else (x[j] if i == 1 else x[j] + w),
-                    float(v) + 5, f'{v:.0f}', ha='center', fontsize=8)
+            ax.text(x[j] + offset, float(v) + 5, f'{v:.0f}', ha='center', fontsize=8)
     plt.tight_layout()
     plt.savefig(f'{output_dir}/dashboard.png', dpi=150)
     plt.close()
