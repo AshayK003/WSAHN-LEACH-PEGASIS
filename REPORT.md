@@ -34,11 +34,11 @@ lifetime, packet delivery, delay, and energy trade-off, and why?*
 
 | Protocol | Year | Core idea | Known weakness |
 |----------|------|-----------|----------------|
-| LEACH | 2000 | Rotating CHs, direct CH→sink | CHs far from sink die fast; no multi-hop |
-| PEGASIS | 2002 | Greedy chain, single leader | High latency; leader hotspot |
-| SEP | 2005 | Heterogeneous (2-level) CH election | Static 2-level only |
-| DEEC | 2006 | Heterogeneity + residual-energy CH prob. | Still cluster-only, direct to sink |
-| H-PEGASIS / PDCH | — | Multiple chain leaders | Added complexity, no heterogeneity |
+| LEACH [1] | 2000 | Rotating CHs, direct CH→sink | CHs far from sink die fast; no multi-hop |
+| PEGASIS [2] | 2002 | Greedy chain, single leader | High latency; leader hotspot |
+| SEP [3] | 2004 | Heterogeneous (2-level) CH election | Static 2-level only |
+| DEEC [4] | 2006 | Heterogeneity + residual-energy CH prob. | Still cluster-only, direct to sink |
+| Multi-leader PEGASIS variants | — | Multiple chain leaders / double chains | Added complexity, no heterogeneity |
 
 ClusterChain-H generalises SEP/DEEC-style heterogeneity into a **clustering +
 chaining hybrid** and removes the PEGASIS leader hotspot via an energy- and
@@ -54,7 +54,7 @@ a custom Python discrete-event simulator is used as the equivalent, giving full
 control over the first-order radio model and reproducible seeded runs. All protocols
 share the same `energy.py` module, so comparisons are strictly like-for-like.
 
-**Energy model (first-order radio, Heinzelman et al.):**
+**Energy model (first-order radio, Heinzelman et al. [1]):**
 - `E_ELEC = 50 nJ/bit` (electronics), `E_DA = 5 nJ/bit` (aggregation)
 - Free-space below crossover `D0 ≈ 87 m`: `E_tx = E_ELEC + E_FS·d²`
 - Multipath above `D0`: `E_tx = E_ELEC + E_MP·d⁴`
@@ -73,17 +73,17 @@ communication-range requirement and is exercised in Scenario 2.
 
 ## 4. Protocols Under Study
 
-1. **LEACH** — probabilistic CH election (`T(n)` threshold), members join nearest
+1. **LEACH [1]** — probabilistic CH election (`T(n)` threshold), members join nearest
    CH, CH aggregates and transmits directly to sink (1-hop delay).
-2. **PEGASIS** — greedy nearest-neighbour chain rebuilt every round; data fused to a
+2. **PEGASIS [2]** — greedy nearest-neighbour chain rebuilt every round; data fused to a
    single leader that transmits to the sink (delay ≈ chain length).
-3. **SEP / DEEC** — heterogeneity-aware CH election (advanced nodes, 2× initial
+3. **SEP / DEEC [3, 4]** — heterogeneity-aware CH election (advanced nodes, 2× initial
    energy; DEEC adds residual-energy weighting).
 4. **ClusterChain-H** — four mechanisms:
    - **Heterogeneity-aware election**: CH/relay score = weighted residual energy ×
-     node type (SEP/DEEC style) + sink proximity.
-   - **MST chain geometry** (Prim's MST, O(N²)): near the per-round energy floor,
-     removing PEGASIS's long greedy links.
+     node type (SEP/DEEC style [3, 4]) + sink proximity.
+   - **MST chain geometry** (Prim's MST, O(N²)): near the per-round energy floor
+     (Kalpakis et al. [5]), removing PEGASIS's long greedy links.
    - **Rotating terminus**: the sink-facing chain end is the node maximising
      residual energy and sink proximity, rotated every round (removes the leader
      hotspot).
