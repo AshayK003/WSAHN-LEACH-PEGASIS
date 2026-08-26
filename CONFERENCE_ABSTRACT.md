@@ -26,7 +26,7 @@ four mechanisms:
 In heterogeneous deployments (10% advanced nodes, 2× initial energy), the protocol
 achieves **2.4–2.8× the network lifetime of vanilla PEGASIS** (N=100: 2917 vs 1200
 rounds; N=200: 3326 vs 1200 rounds) with **PDR = 1.00**, **end-to-end delay 25–51
-hops vs PEGASIS's 92–190**, and **energy×delay 4.5× lower**. Against LEACH the
+hops vs PEGASIS's 92–190** (~3.7× lower), and **energy×delay ~1.5× lower**. Against LEACH the
 improvement is 3.5–3.9×; against heterogeneity-aware baselines (SEP, DEEC) it is
 2.2–2.6×. A homogeneous ablation (geometry + rotation only, no heterogeneity)
 still yields **1.48× PEGASIS** lifetime, confirming the mechanisms are independently
