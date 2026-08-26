@@ -30,6 +30,7 @@ from PIL import Image
 from leach import LEACH
 from pegasis import PEGASIS
 from clusterchain import ClusterChain
+from clusterchain_h import ClusterChainH
 
 SEED = 42
 FIELD = (100, 100)
@@ -82,6 +83,21 @@ def _clusterchain_edges(nodes):
     return edges
 
 
+def _clusterchain_h_edges(nodes):
+    """Edges for ClusterChain-H (multichain mode shows all chains)."""
+    edges = []
+    for n in nodes:
+        if n.alive and not n.is_ch and n.ch_id is not None:
+            edges.append((n.id, n.ch_id))
+    for n in nodes:
+        if n.alive and n.chain_next is not None:
+            edges.append((n.id, n.chain_next))
+    for n in nodes:
+        if n.alive and n.is_terminus:
+            edges.append((n.id, -1))
+    return edges
+
+
 def _coord_lookup(sim, nid):
     if nid == -1:
         return SINK
@@ -96,6 +112,9 @@ def _render_frame(sim, protocol, initial_energy):
     elif protocol == "pegasis":
         edges = _pegasis_edges(sim.nodes)
         heads = [(n.x, n.y) for n in sim.nodes if n.alive and n.is_leader]
+    elif protocol == "clusterchain_h":
+        edges = _clusterchain_h_edges(sim.nodes)
+        heads = [(n.x, n.y) for n in sim.nodes if n.alive and (n.is_ch or n.is_terminus)]
     else:
         edges = _clusterchain_edges(sim.nodes)
         heads = [(n.x, n.y) for n in sim.nodes if n.alive and n.is_ch]
@@ -144,6 +163,9 @@ def make_animation(protocol: str, outfile: str, max_rounds=MAX_ROUNDS,
         sim = LEACH()
     elif protocol == "pegasis":
         sim = PEGASIS()
+    elif protocol == "clusterchain_h":
+        # Use heterogeneous multichain mode for animation
+        sim = ClusterChainH(mode="multichain", K=3, m=0.1, a_mult=2.0)
     else:
         sim = ClusterChain()
     initial_energy = getattr(sim, "initial_energy", 0.5)
@@ -164,5 +186,5 @@ def make_animation(protocol: str, outfile: str, max_rounds=MAX_ROUNDS,
 
 if __name__ == "__main__":
     here = os.path.dirname(os.path.abspath(__file__))
-    for name in ("leach", "pegasis", "clusterchain"):
+    for name in ("leach", "pegasis", "clusterchain", "clusterchain_h"):
         make_animation(name, os.path.join(here, f"anim_{name}.gif"))
