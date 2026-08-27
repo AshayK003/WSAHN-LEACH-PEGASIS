@@ -28,3 +28,6 @@ Thumbs.db
 nul
 *.csv
 *.npy
+mailmap.txt
+pre-rewrite-backup.bundle
+nul

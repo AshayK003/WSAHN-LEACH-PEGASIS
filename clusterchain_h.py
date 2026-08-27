@@ -10,9 +10,10 @@ PEGASIS:
      nearest-neighbour PEGASIS (geometry lever).
   3. Energy + sink-proximity rotating chain terminus / leaders across parallel
      chains (hotspot-removal lever; H-PEGASIS / PDCH style).
-  4. An analytically grounded ADAPTIVE chain density (number of parallel chains
-     K) that trades energy against delay, derived from a refined per-round
-     energy model (see optimal_k / adaptive_k below).
+  4. A tunable chain count K: K=1 keeps a single refined chain (lifetime-optimal,
+     one sink hop); higher K adds parallel chains that strictly lower delay.
+     The `adaptive` mode stays at K=1 for the whole run (it tracks the measured
+     best lifetime config), while `multichain` lets K be set explicitly.
 
 All protocols import the same energy.py, so comparisons are like-for-like.
 PDR is defined uniformly as packets delivered to the sink / packets generated
@@ -335,7 +336,7 @@ class ClusterChainH:
                 continue
             ch = by_id.get(n.ch_id)
             if ch is None or not ch.alive:
-                delivered.discard(id(n))
+                delivered.discard(n.id)
                 continue
             d = n.distance_to(ch)
             if not in_range(d):
@@ -343,7 +344,7 @@ class ClusterChainH:
                 delivered.discard(n.id)
                 continue
             if n.consume(tx_energy(d)):
-                delivered.discard(id(n))
+                delivered.discard(n.id)
                 continue
             if ch.consume(rx_energy() + da_energy()):
                 for mid in members.get(ch.id, []):
@@ -401,9 +402,10 @@ class ClusterChainH:
         else:
             d = terminus.distance_to(self.sink)
             if terminus.consume(tx_energy(d)):
-                for mid in members.get(terminus.id, []):
-                    delivered.discard(mid)
-                delivered.discard(terminus.id)
+                # Terminus aggregates the entire network's fused payload; its
+                # death on the sink hop loses the whole round — consistent with
+                # PEGASIS clearing all deliveries when the leader dies.
+                delivered.clear()
             else:
                 total_tx += tx_energy(d)
                 delays.append(1 + max(1, len(chain)))
@@ -428,7 +430,7 @@ class ClusterChainH:
                 if nxt is None or not nxt.alive:
                     broken = True
                 if broken:
-                    delivered.discard(id(c))
+                    delivered.discard(c.id)
                     continue
                 d = c.distance_to(nxt)
                 if not in_range(d):
@@ -438,12 +440,12 @@ class ClusterChainH:
                     continue
                 if c.consume(tx_energy(d)):
                     broken = True
-                    delivered.discard(id(c))
+                    delivered.discard(c.id)
                     continue
                 if nxt.consume(rx_energy() + da_energy()):
                     broken = True
-                    delivered.discard(id(c))
-                    delivered.discard(id(nxt))
+                    delivered.discard(c.id)
+                    delivered.discard(nxt.id)
                     continue
                 total_tx += tx_energy(d)
                 total_rx += rx_energy() + da_energy()
@@ -451,11 +453,16 @@ class ClusterChainH:
             if terminus is None:
                 continue
             if broken:
-                delivered.discard(id(terminus))
+                delivered.discard(terminus.id)
             else:
                 d = terminus.distance_to(self.sink)
                 if terminus.consume(tx_energy(d)):
-                    delivered.discard(id(terminus))
+                    # Terminus aggregates this chain's fused payload; its death
+                    # loses the whole chain's round. Parallel chains isolate the
+                    # loss to one sector, unlike single-chain PEGASIS (which
+                    # clears the entire network).
+                    for node in ordered:
+                        delivered.discard(node.id)
                 else:
                     total_tx += tx_energy(d)
                     delays.append(max(1, len(ordered)))
@@ -481,11 +488,14 @@ class ClusterChainH:
 
         mode = self.mode
         if mode == 'adaptive':
-            frac = self.alive_count / self.n
-            # Plenty of energy + many nodes: multi-chain cuts delay & balances load.
-            # Energy-scarce / late game: single refined chain (1 sink hop) maximises
-            # lifetime.
-            mode = 'multichain' if frac > 0.6 else 'clustered'
+            # Lifetime is maximised by a single refined MST chain (1 sink hop);
+            # extra parallel chains add costly sink hops. As nodes die, keep one
+            # chain and let the rotating terminus absorb the load. This tracks the
+            # measured best config (multichain K=1) for the whole run.
+            mode = 'multichain'
+            k = 1
+        else:
+            k = self.K
 
         if mode == 'clustered':
             k = optimal_k(self.alive_count, 1) if self.adaptive_k else self.K
@@ -496,7 +506,7 @@ class ClusterChainH:
             build_refined_chain(heads, self.sink, rotate=self.rotate)
             m = self._transmit_clustered(heads)
         else:  # multichain
-            k = max(1, min(self.K, self.alive_count))
+            k = max(1, min(k, self.alive_count))
             # Partition is recomputed each round (cheap); the expensive 2-opt
             # refinement is cached and only re-run when a chain's membership
             # changes (i.e. a node died). The terminus still rotates every round.

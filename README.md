@@ -25,8 +25,8 @@ strictly like-for-like:
   PEGASIS-style refined chain, plus four mechanisms: MST chain geometry (removes
   PEGASIS's long greedy links), an energy + sink-proximity **rotating terminus**
   (removes the permanent leader hotspot), heterogeneity-aware election (SEP/DEEC
-  style), and an analytically grounded adaptive chain count K that trades delay
-  against lifetime.
+  style), and a tunable chain count K that trades delay against lifetime (K=1 is
+  lifetime-optimal; higher K adds parallel chains that cut delay).
 
 All protocols share the same `energy.py`, seed set, and deployment, so comparisons
 are fair. ClusterChain-H generalises the SEP/DEEC heterogeneity idea into a
@@ -42,27 +42,30 @@ Network lifetime, delivery and delay averaged over **20 seeded runs**
 | Protocol | Last node dead | PDR | Delay (hops) | vs PEGASIS |
 |----------|--------------:|----:|------------:|-----------:|
 | LEACH (het) | 916 | 0.98 | 1.0 | 0.39x |
-| PEGASIS (het) | 2347 | 0.99 | 76.8 | 1.00x |
-| SEP | 1326 | 0.98 | 1.0 | 0.57x |
-| DEEC | 1215 | 0.99 | 1.0 | 0.52x |
-| DCK-LEACH (2022) | 1173 | 1.00 | 3.0 | 0.50x |
-| NPSOP (2023) | 2091 | 1.00 | 2.0 | 0.89x |
-| **ClusterChain-H (K=1)** | **3162** | **1.00** | 74.4 | **1.35x** |
-| **ClusterChain-H (K=2)** | **3105** | **1.00** | 37.2 | **1.32x** |
-| **ClusterChain-H (K=3)** | **2962** | **1.00** | 24.5 | **1.26x** |
+| PEGASIS (het) | 2333 | 0.99 | 77.2 | 1.00x |
+| SEP | 1375 | 0.99 | 1.0 | 0.59x |
+| DEEC | 1222 | 0.99 | 1.0 | 0.52x |
+| DCK-LEACH (2022) | 1166 | 1.00 | 3.0 | 0.50x |
+| NPSOP (2023) | 2172 | 1.00 | 2.0 | 0.93x |
+| **ClusterChain-H (K=1)** | **3113** | **0.96** | 73.9 | **1.33x** |
+| **ClusterChain-H (K=2)** | **3031** | **0.98** | 37.2 | **1.30x** |
+| **ClusterChain-H (K=3)** | **2945** | **0.98** | 24.7 | **1.26x** |
 
 **Honest summary.** ClusterChain-H does not invent extra battery to win: every
 protocol above runs on the *identical* 0.55 J/node heterogeneous budget, and the
 gain is measured on the same energy envelope as the baselines. Against the
-strongest like-for-like baseline (heterogeneous PEGASIS) it delivers **1.35x**
-lifetime with equal-or-better PDR and a tunable delay (K=3: 25 hops vs PEGASIS 77).
-Against the 2022–2023 CH-optimisation literature it reaches **2.7x DCK-LEACH** and
-**1.5x NPSOP** — both re-implemented in this same simulator, not cited from their
-papers. **K is a delay/lifetime knob, not a hidden winner**: K=1/2/3 lifetimes
-(3162/3105/2962) are within each other's 95% CI, and higher K strictly lowers delay.
+strongest like-for-like baseline (heterogeneity-aware PEGASIS) it delivers **1.33x**
+lifetime with PDR of 0.96–0.98 (marginally below the baselines' ~0.99 — the measured
+cost of the single-chain topology, where a terminus death on the sink hop clears the
+whole round, counted consistently across all protocols) and a tunable delay
+(K=3: 25 hops vs PEGASIS 77). Against the 2022–2023 CH-optimisation literature it
+reaches **2.7x DCK-LEACH** and **1.4x NPSOP** — both re-implemented in this same
+simulator, not cited from their papers. **K is a delay/lifetime knob, not a hidden
+winner**: K=1/2/3 lifetimes (3113/3031/2945) are within each other's 95% CI, and
+higher K strictly lowers delay.
 
 A **homogeneous ablation** (no advanced nodes; geometry + rotating terminus only)
-gives ClusterChain-H **1.47x** the lifetime of homogeneous PEGASIS (1764 vs 1200
+gives ClusterChain-H **1.45x** the lifetime of homogeneous PEGASIS (1741 vs 1200
 rounds), confirming the structural mechanisms are independently effective; the full
 heterogeneous gain combines that structural contribution with heterogeneity-aware
 election.
