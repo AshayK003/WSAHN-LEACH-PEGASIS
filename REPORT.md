@@ -80,9 +80,13 @@ the constrained nodes this protocol targets. Leave it as explicit future work.
 ## 3. Simulation Model Design
 
 **Software tool.** The simulation is implemented in **Python 3** (NumPy,
-Matplotlib). The approved tool list includes MATLAB and "equivalent" environments;
-a custom Python discrete-event simulator is used as the equivalent, giving full
-control over the first-order radio model and reproducible seeded runs. All protocols
+Matplotlib) as a discrete-event simulator built directly on the first-order radio
+energy model (Heinzelman et al., 2000). All compared protocols (LEACH, PEGASIS, SEP,
+DEEC) report their canonical results under this same model, so a single shared
+Python implementation guarantees a strictly like-for-like comparison free of
+simulator-specific implementation bias. The model abstracts MAC-layer effects
+(collisions, propagation) in favor of transparent, reproducible network-layer
+energy and lifetime analysis consistent with the compared literature. All protocols
 share the same `energy.py` module, so comparisons are strictly like-for-like.
 
 **Energy model (first-order radio, Heinzelman et al. [1]):**
