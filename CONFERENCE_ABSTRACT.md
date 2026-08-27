@@ -30,13 +30,20 @@ are not an artefact of extra battery. In this fair comparison ClusterChain-H ach
 **1.33x the lifetime of heterogeneity-aware PEGASIS (3111 vs 2335 rounds)**,
 **2.24x SEP (1391)** and **2.57x DEEC (1213)**, with **PDR = 1.00** versus
 ~0.98-0.99 for the baselines and end-to-end delay of **25-75 hops versus PEGASIS's
-77-93**. A homogeneous ablation (geometry + rotation only, no heterogeneity) still
-yields **1.41x the lifetime of homogeneous PEGASIS (1696 vs 1200)**, confirming the
-structural mechanisms are independently effective; the full heterogeneous gain of
-1.33x over heterogeneous PEGASIS combines that structural contribution with the
-legitimate heterogeneity-aware election. The single parameter K explicitly trades
-delay against lifetime, unifying the LEACH and PEGASIS design spaces. All code,
-evaluation harness, and reproducibility artifacts are open.
+77-93**. To test against the recent literature we re-implemented two 2022-2023
+CH-optimisation schemes (DCK-LEACH dual cluster-head, NPSOP PSO cluster-head
+selection) inside the same model: both remain clustering protocols whose heads pay
+a direct multipath sink hop, and ClusterChain-H outperforms them by **1.3-2.4x in
+lifetime** and **~1.3x in energy efficiency**. A homogeneous ablation (geometry +
+rotation only, no heterogeneity) still yields **1.41x the lifetime of homogeneous
+PEGASIS (1696 vs 1200)**, confirming the structural mechanisms are independently
+effective; the full heterogeneous gain of 1.33x over heterogeneous PEGASIS combines
+that structural contribution with the legitimate heterogeneity-aware election. The
+single parameter K explicitly trades delay against lifetime, unifying the LEACH and
+PEGASIS design spaces. Learned routing (HDQN, DRL-GNN) reports higher lifetimes but
+requires a training loop unsuitable for the constrained nodes this protocol targets,
+and is left as explicit future work. All code, evaluation harness, and
+reproducibility artifacts are open.
 
 **Keywords:** wireless sensor networks, LEACH, PEGASIS, clustering, chain routing,
 heterogeneity, energy efficiency, network lifetime.

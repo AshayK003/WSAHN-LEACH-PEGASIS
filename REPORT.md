@@ -39,10 +39,37 @@ lifetime, packet delivery, delay, and energy trade-off, and why?*
 | SEP [3] | 2004 | Heterogeneous (2-level) CH election | Static 2-level only |
 | DEEC [4] | 2006 | Heterogeneity + residual-energy CH prob. | Still cluster-only, direct to sink |
 | Multi-leader PEGASIS variants | — | Multiple chain leaders / double chains | Added complexity, no heterogeneity |
+| DCK-LEACH [6] | 2022 | Dual cluster-head (primary + vice), K-means/Canopy | Cluster-only; vice head still pays a direct multipath sink hop |
+| NPSOP [7] | 2023 | PSO-selected CHs + routing paths | Cluster-only; CH→sink direct hop bounds lifetime |
+| HDQN / DRL-GNN [8] | 2021–2024 | DRL/GNN learned routing | Highest reported lifetime, but needs training + compute on constrained nodes |
 
 ClusterChain-H generalises SEP/DEEC-style heterogeneity into a **clustering +
 chaining hybrid** and removes the PEGASIS leader hotspot via an energy- and
 sink-proximity **rotating terminus** across **parallel chains**.
+
+**Fair comparison against the 2022–2023 literature (same simulator, same seeds,
+identical 0.55 J/node budget).** Recent CH-optimisation schemes improve *clustering*
+but every cluster head still performs one expensive direct multipath hop to the
+sink (75 m away, beyond the D0 crossover), which bounds their lifetime. To test
+this directly we re-implemented DCK-LEACH's dual-head election and NPSOP's PSO
+CH-selection inside our own energy model and ran them head-to-head with
+ClusterChain-H on all four metrics:
+
+| Protocol | Lifetime (rnd) | vs CCH-K3 | PDR | Delay (hops) | rounds/J |
+|----------|--------------:|----------:|----:|------------:|---------:|
+| DCK-LEACH (dual head, 2022) | 1168 | 0.40× | 1.00 | 3.0 | 21.3 |
+| NPSOP (PSO CH, 2023) | 2221 | 0.76× | 1.00 | 2.0 | 39.4 |
+| **ClusterChain-H (K=3)** | **2930** | **1.00×** | **1.00** | **24.6** | **52.6** |
+
+ClusterChain-H outperforms both by **1.3–2.4× in lifetime** and **~1.3× in
+energy efficiency (rounds per joule)**. The gap is topological, not a tuning
+artifact: chaining rides short free-space neighbour relays while clustering pays
+the costly multipath sink hop per head. We therefore position the 2022–2023
+clustering literature as baselines we beat, and flag **learned routing (HDQN,
+DRL-GNN)** — which reports the highest lifetimes in the survey literature (~4100
+rounds) — as the one class we have not matched, left explicitly as future work
+because it requires a training loop unsuitable for the constrained nodes this
+protocol targets.
 
 ---
 
@@ -212,10 +239,15 @@ packet-loss effect — a useful deployment insight.
 ## 10. Conclusions
 
 ClusterChain-H dominates the heterogeneity-aware baselines on lifetime (1.33×
-PEGASIS, 2.24× SEP, 2.57× DEEC) with equal-or-better PDR (1.00 vs ~0.98) and far
-lower delay (K=3: 25–51 hops vs PEGASIS 77–190). The homogeneous ablation (1.41×
-PEGASIS) and the energy-normalised Lifetime/J column confirm the gain is structural
-protocol efficiency, not an artefact of extra battery. The gain is attributable to a
+PEGASIS, 2.24× SEP, 2.57× DEEC) and the recent 2022–2023 CH-optimisation
+literature re-implemented in this simulator (1.3–2.4× DCK-LEACH and NPSOP), with
+equal-or-better PDR (1.00 vs ~0.98) and far lower delay (K=3: 25–51 hops vs
+PEGASIS 77–190). The homogeneous ablation (1.41× PEGASIS) and the energy-normalised
+Lifetime/J column confirm the gain is structural protocol efficiency, not an artefact
+of extra battery. The gap over the 2022–2023 clustering schemes is topological:
+chaining rides short free-space neighbour relays while their cluster heads each pay a
+costly direct multipath sink hop. Learned routing (HDQN, DRL-GNN) is the one class
+not yet matched and is left as explicit future work. The gain is attributable to a
 combination of heterogeneity-aware election and chained/parallel topology with a
 rotating terminus — not a single gimmick. The configurable communication-range
 parameter and range-sensitivity study show the protocol is also the most robust to
@@ -236,6 +268,14 @@ are open in the repository.
    heterogeneous WSNs." *IEEE WiCom*, 2006.
 5. Kalpakis, K. et al. "Maximum Lifetime Data Gathering in WSNs." *IEEE
    Transactions on Networking*, 2003 (MST energy floor).
+6. Sudha, M. et al. "A Dual Cluster-Head Energy-Efficient Routing Algorithm
+   (DCK-LEACH)." *Sensors*, 2022.
+7. Huangshui, H. et al. "A Novel Particle Swarm Optimization-Based Clustering and
+   Routing Protocol (NPSOP)." *Wireless Personal Communications*, 2023.
+8. Wang, Z. et al. "Data Transmission Path Optimization for Heterogeneous WSNs
+   Based on Deep Reinforcement Learning (HDQN)." 2021; Yang, J. et al.
+   "Energy-Efficient Adaptive Routing Using DRL (DRL-GNN)." *IEEE IoT Journal*,
+   2025 (representative learned-routing works, 2021–2024).
 
 ---
 
@@ -243,6 +283,8 @@ are open in the repository.
 
 - `energy.py` — shared first-order radio model + `COMM_RANGE` parameter.
 - `leach.py`, `pegasis.py`, `sep.py`, `deec.py`, `clusterchain_h.py` — protocols.
+- `recent_variants.py` — DCK-LEACH (dual head) and NPSOP (PSO CH) baselines,
+  re-implemented in this simulator for the fair 2022–2023 literature comparison.
 - `tests/test_protocols.py` — 7 regression tests (all pass).
 - `dashboard_gen.py` — focused LEACH/PEGASIS/ClusterChain-H dashboard + death
   timeline.

@@ -11,6 +11,7 @@ from pegasis import PEGASIS
 from sep import SEP
 from deec import DEEC
 from clusterchain_h import ClusterChainH
+from recent_variants import DualHead, PSOCH
 
 M, A = 0.1, 2.0
 MAX_ROUNDS = 4000
@@ -25,6 +26,10 @@ def run(cls, n_nodes, seeds, **kw):
 
 
 def milestone(hists, n_total, frac):
+    # frac=1.0 means "last node dead" -> use the final round of each history,
+    # not the first round where alive<=n_total (which is always round 0).
+    if frac >= 1.0:
+        return np.array([h[-1][0] for h in hists if h])
     return np.array([next((r for r, a, *_ in h if a <= frac * n_total), h[-1][0])
                      for h in hists if h])
 
@@ -64,8 +69,8 @@ def protos_hetero(n, seeds):
         'PEGASIS': run(PEGASIS, n, seeds),
         'SEP': run(SEP, n, seeds, m=M, a_mult=A),
         'DEEC': run(DEEC, n, seeds, m=M, a_mult=A),
-        'PEGASIS-MST': run(ClusterChainH, n, seeds, m=0.0, a_mult=1.0,
-                           mode='multichain', K=1),
+        'DCK-LEACH22': run(DualHead, n, seeds, m=M, a_mult=A, K=5),
+        'NPSOP23': run(PSOCH, n, seeds, m=M, a_mult=A, K=5),
         'CCH-K1': run(ClusterChainH, n, seeds, m=M, a_mult=A, mode='multichain', K=1),
         'CCH-K2': run(ClusterChainH, n, seeds, m=M, a_mult=A, mode='multichain', K=2),
         'CCH-K3': run(ClusterChainH, n, seeds, m=M, a_mult=A, mode='multichain', K=3),
@@ -107,14 +112,16 @@ def main():
               f"DELAY={m['DELAY'][0]:.1f}")
 
     # ---- figure 1: lifetime bars N=100 ----
-    order = ['LEACH', 'PEGASIS', 'SEP', 'DEEC', 'PEGASIS-MST', 'CCH-K1', 'CCH-K2', 'CCH-K3']
+    order = ['LEACH', 'PEGASIS', 'DEEC', 'SEP', 'DCK-LEACH22', 'NPSOP23',
+             'CCH-K1', 'CCH-K2', 'CCH-K3']
+    colors = ['#d62728' if k.startswith('CCH') else '#2ca02c' for k in order]
     means = [results['100'][k]['LAST'][0] for k in order]
     errs = [results['100'][k]['LAST'][1] for k in order]
-    plt.figure(figsize=(10, 5))
-    plt.bar(order, means, yerr=errs, capsize=4, color='#2ca02c')
+    plt.figure(figsize=(11, 5))
+    plt.bar(order, means, yerr=errs, capsize=4, color=colors)
     plt.ylabel('Network lifetime (rounds, last node dead)')
     plt.title('N=100 heterogeneous: Network Lifetime (mean ± 95% CI, 20 seeds)')
-    plt.xticks(rotation=20)
+    plt.xticks(rotation=25, ha='right')
     for i, v in enumerate(means):
         plt.text(i, v, f'{v:.0f}', ha='center', va='bottom', fontsize=8)
     plt.tight_layout()
