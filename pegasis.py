@@ -39,6 +39,8 @@ class PEGASIS:
         sink_x: float = 50,
         sink_y: float = 175,
         initial_energy: float = 0.5,
+        m: float = 0.0,            # advanced-node fraction (heterogeneity)
+        a_mult: float = 2.0,       # advanced initial-energy multiplier
     ):
         self.n = n_nodes
         self.field_x = field_x
@@ -48,9 +50,11 @@ class PEGASIS:
         self.alive_count = n_nodes
         self.history = []  # (round, alive, total_energy, pdr, avg_delay, packets_sent, packets_received)
 
-        # Create nodes
+        # Create nodes (heterogeneity-aware, mirrors ClusterChain-H / SEP / DEEC)
+        n_adv = int(round(m * n_nodes))
         self.nodes = [
-            PegNode(i, random.uniform(0, field_x), random.uniform(0, field_y), initial_energy)
+            PegNode(i, random.uniform(0, field_x), random.uniform(0, field_y),
+                    a_mult * initial_energy if i < n_adv else initial_energy)
             for i in range(n_nodes)
         ]
 
