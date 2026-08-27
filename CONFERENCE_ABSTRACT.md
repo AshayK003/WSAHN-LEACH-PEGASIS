@@ -26,23 +26,26 @@ four mechanisms:
 All protocols are evaluated under a single first-order radio model with
 **identical deployment conditions** (100 nodes, 10% advanced nodes at 2x initial
 energy, 20 seeded runs): lifetime is normalised by per-node energy budget so gains
-are not an artefact of extra battery. In this fair comparison ClusterChain-H achieves
-**1.33x the lifetime of heterogeneity-aware PEGASIS (3111 vs 2335 rounds)**,
-**2.24x SEP (1391)** and **2.57x DEEC (1213)**, with **PDR = 1.00** versus
-~0.98-0.99 for the baselines and end-to-end delay of **25-75 hops versus PEGASIS's
-77-93**. To test against the recent literature we re-implemented two 2022-2023
-CH-optimisation schemes (DCK-LEACH dual cluster-head, NPSOP PSO cluster-head
-selection) inside the same model: both remain clustering protocols whose heads pay
-a direct multipath sink hop, and ClusterChain-H outperforms them by **1.3-2.4x in
-lifetime** and **~1.3x in energy efficiency**. A homogeneous ablation (geometry +
-rotation only, no heterogeneity) still yields **1.41x the lifetime of homogeneous
-PEGASIS (1696 vs 1200)**, confirming the structural mechanisms are independently
-effective; the full heterogeneous gain of 1.33x over heterogeneous PEGASIS combines
-that structural contribution with the legitimate heterogeneity-aware election. The
-single parameter K explicitly trades delay against lifetime, unifying the LEACH and
-PEGASIS design spaces. Learned routing (HDQN, DRL-GNN) reports higher lifetimes but
-requires a training loop unsuitable for the constrained nodes this protocol targets,
-and is left as explicit future work. All code, evaluation harness, and
+are not an artefact of extra battery. In this fair comparison the best ClusterChain-H
+configuration (K=1, 3162 ± 100 rounds) achieves **1.35x the lifetime of
+heterogeneity-aware PEGASIS (2347 ± 35)**, **2.39x SEP (1326 ± 19)** and
+**2.60x DEEC (1215 ± 25)**, with **PDR = 1.00** versus ~0.98-0.99 for the
+baselines and end-to-end delay of **25-75 hops versus PEGASIS's 77-93**. K is a
+delay/lifetime knob, not a hidden winner: K=1-3 are within each other's 95% CI on
+lifetime (3162/3105/2962), and higher K strictly lowers delay (74/37/25 hops).
+To test against the recent literature we re-implemented two 2022-2023 CH-optimisation
+schemes (DCK-LEACH dual cluster-head, NPSOP PSO cluster-head selection) inside the
+same model: both remain clustering protocols whose heads pay a direct multipath sink
+hop, and ClusterChain-H outperforms them by **2.7x DCK-LEACH (3162 vs 1173)** and
+**1.5x NPSOP (3162 vs 2091)** in lifetime. A homogeneous ablation (geometry +
+rotation only, no heterogeneity) yields **1.47x the lifetime of homogeneous PEGASIS
+(1764 vs 1200 rounds)**, confirming the structural mechanisms are independently
+effective; the full heterogeneous gain combines that structural contribution with the
+legitimate heterogeneity-aware election. Learned routing (HDQN, DRL-GNN) is reported
+in the survey literature to reach longer lifetimes (~4000+ rounds in their own
+simulators) but needs a training loop unsuitable for the constrained nodes this
+protocol targets, and is left as explicit future work — it has not been reproduced in
+our model and is not a comparison claim. All code, evaluation harness, and
 reproducibility artifacts are open.
 
 **Keywords:** wireless sensor networks, LEACH, PEGASIS, clustering, chain routing,

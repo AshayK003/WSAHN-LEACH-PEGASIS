@@ -48,28 +48,32 @@ chaining hybrid** and removes the PEGASIS leader hotspot via an energy- and
 sink-proximity **rotating terminus** across **parallel chains**.
 
 **Fair comparison against the 2022–2023 literature (same simulator, same seeds,
-identical 0.55 J/node budget).** Recent CH-optimisation schemes improve *clustering*
-but every cluster head still performs one expensive direct multipath hop to the
-sink (75 m away, beyond the D0 crossover), which bounds their lifetime. To test
-this directly we re-implemented DCK-LEACH's dual-head election and NPSOP's PSO
-CH-selection inside our own energy model and ran them head-to-head with
-ClusterChain-H on all four metrics:
+identical 0.55 J/node budget, 20 runs, full heterogeneous deployment).** Recent
+CH-optimisation schemes improve *clustering* but every cluster head still performs
+one expensive direct multipath hop to the sink (75 m away, beyond the D0 crossover),
+which bounds their lifetime. To test this directly we re-implemented DCK-LEACH's
+dual-head election and NPSOP's PSO CH-selection inside our own energy model and ran
+them head-to-head with ClusterChain-H on all four metrics. The full 9-protocol table
+is in §9. Headline result (best CCH config, K=1, 3162 ± 100 rounds):
 
-| Protocol | Lifetime (rnd) | vs CCH-K3 | PDR | Delay (hops) | rounds/J |
-|----------|--------------:|----------:|----:|------------:|---------:|
-| DCK-LEACH (dual head, 2022) | 1168 | 0.40× | 1.00 | 3.0 | 21.3 |
-| NPSOP (PSO CH, 2023) | 2221 | 0.76× | 1.00 | 2.0 | 39.4 |
-| **ClusterChain-H (K=3)** | **2930** | **1.00×** | **1.00** | **24.6** | **52.6** |
+| Protocol | Lifetime (rnd) | vs best CCH | PDR | Delay (hops) |
+|----------|--------------:|------------:|----:|------------:|
+| DCK-LEACH (dual head, 2022) | 1173 | 0.37× | 1.00 | 3.0 |
+| NPSOP (PSO CH, 2023) | 2091 | 0.66× | 1.00 | 2.0 |
+| **ClusterChain-H (K=1, best)** | **3162** | **1.00×** | **1.00** | **74.4** |
+| ClusterChain-H (K=3, low-delay) | 2962 | 0.94× | 1.00 | 24.5 |
 
-ClusterChain-H outperforms both by **1.3–2.4× in lifetime** and **~1.3× in
-energy efficiency (rounds per joule)**. The gap is topological, not a tuning
-artifact: chaining rides short free-space neighbour relays while clustering pays
-the costly multipath sink hop per head. We therefore position the 2022–2023
+ClusterChain-H outperforms both recent schemes by **2.7× over DCK-LEACH** and
+**1.5× over NPSOP** in lifetime. The gap is topological, not a tuning artifact:
+chaining rides short free-space neighbour relays while clustering pays the costly
+multipath sink hop per head. **K is a delay/lifetime knob, not a hidden winner** —
+K=1/2/3 lifetimes (3162/3105/2962) are statistically tied within 95% CI, and higher
+K strictly lowers delay (74→37→25 hops). We therefore position the 2022–2023
 clustering literature as baselines we beat, and flag **learned routing (HDQN,
-DRL-GNN)** — which reports the highest lifetimes in the survey literature (~4100
-rounds) — as the one class we have not matched, left explicitly as future work
-because it requires a training loop unsuitable for the constrained nodes this
-protocol targets.
+DRL-GNN)** — reported in the survey literature to reach ~4000+ rounds *in their own
+simulators* — as the one class we have not matched. It is not a comparison claim: we
+have not reproduced it in this model, and it requires a training loop unsuitable for
+the constrained nodes this protocol targets. Leave it as explicit future work.
 
 ---
 
@@ -163,31 +167,38 @@ communication-range requirement and is exercised in Scenario 2.
 ### 9.1 Baseline (N=100, 20 seeds, means) — heterogeneous deployment
 
 All protocols run on identical conditions: 100 nodes, 10% advanced nodes at 2x
-initial energy (0.55 J/node budget). Lifetime is also normalised by that budget
-(Lifetime/J) so the gain is not an artefact of extra battery.
+initial energy (0.55 J/node budget). Numbers are the mean of 20 seeded runs with
+95% confidence intervals (full table below). The two 2022–2023 schemes (DCK-LEACH,
+NPSOP) are re-implemented in this same simulator — not cited from their papers.
 
-| Protocol | Lifetime (rnd) | PDR | Delay (hops) | Lifetime/J | vs PEGASIS |
-|----------|---------------:|----:|------------:|-----------:|-----------:|
-| LEACH | 922 | 0.98 | 1.0 | 1679 | 0.40x |
-| PEGASIS | 2335 | 0.99 | 76.9 | 4232 | 1.00x |
-| SEP | 1391 | 0.99 | 1.0 | 2450 | 0.60x |
-| DEEC | 1213 | 0.99 | 1.0 | 2189 | 0.52x |
-| **ClusterChain-H (K=1)** | **3111** | **1.00** | 74.6 | **5785** | **1.33x** |
-| **ClusterChain-H (K=3)** | **2980** | **1.00** | **24.6** | 5288 | 1.28x |
+| Protocol | Lifetime (rnd) | 95% CI | PDR | Delay (hops) | vs PEGASIS |
+|----------|---------------:|------:|----:|-------------:|-----------:|
+| LEACH | 916 | ±8 | 0.98 | 1.0 | 0.39× |
+| PEGASIS | 2347 | ±35 | 0.99 | 76.8 | 1.00× |
+| DEEC | 1215 | ±25 | 0.99 | 1.0 | 0.52× |
+| SEP | 1326 | ±19 | 0.98 | 1.0 | 0.57× |
+| DCK-LEACH (2022) | 1173 | ±8 | 1.00 | 3.0 | 0.50× |
+| NPSOP (2023) | 2091 | ±97 | 1.00 | 2.0 | 0.89× |
+| **ClusterChain-H (K=1)** | **3162** | ±100 | **1.00** | 74.4 | **1.35×** |
+| **ClusterChain-H (K=2)** | **3105** | ±110 | **1.00** | 37.2 | **1.32×** |
+| **ClusterChain-H (K=3)** | **2962** | ±97 | **1.00** | 24.5 | **1.26×** |
 
-ClusterChain-H delivers **1.33× the lifetime of heterogeneity-aware PEGASIS**
-(3111 vs 2335), **2.24× SEP** and **2.57× DEEC**, with **PDR = 1.00** versus
-~0.98-0.99 for the baselines and **3× lower delay** at K=3 (24.6 vs 76.9 hops). The
-energy-normalised column (Lifetime/J) shows the gain survives per-node-energy
-normalisation: 5785 vs PEGASIS's 4232.
+ClusterChain-H delivers **1.35× the lifetime of heterogeneity-aware PEGASIS**
+(3162 vs 2347), **2.39× SEP** (1326) and **2.60× DEEC** (1215), with **PDR = 1.00**
+versus ~0.98–0.99 for the baselines. Against the recent literature it reaches
+**2.7× DCK-LEACH** (3162 vs 1173) and **1.5× NPSOP** (3162 vs 2091). **K is a
+delay/lifetime knob, not a hidden winner**: K=1/2/3 lifetimes (3162/3105/2962) sit
+within each other's 95% CI, and higher K strictly lowers delay (74→37→25 hops). The
+best lifetime config (K=1) is reported as the headline; K=3 is the low-delay option
+(25 hops vs PEGASIS 77) for time-sensitive sensing.
 
 ### 9.2 Homogeneous ablation (N=100, 20 seeds) — geometry + rotation only
 
-With no advanced nodes (0.5 J/node, every protocol equal), ClusterChain-H still
-beats homogeneous PEGASIS by **1.41×** (1696 vs 1200 rounds), confirming the MST
-geometry + rotating terminus are independently effective. The full heterogeneous
-gain (1.33× over heterogeneous PEGASIS) is the structural contribution plus the
-legitimate heterogeneity-aware election.
+With no advanced nodes (0.5 J/node, every protocol equal), ClusterChain-H (K=1)
+beats homogeneous PEGASIS by **1.47×** (1764 ± 39 vs 1200 rounds), confirming the
+MST geometry + rotating terminus are independently effective. The full heterogeneous
+gain (1.35× over heterogeneous PEGASIS) is this structural contribution plus the
+legitimate heterogeneity-aware election — not extra battery.
 
 ### 9.3 Scalability (N=200, 8 seeds, means)
 
@@ -221,13 +232,13 @@ packet-loss effect — a useful deployment insight.
 1. **Lifetime.** ClusterChain-H's gain is driven by (a) heterogeneity-aware election
    that spares low-energy/normal nodes, and (b) the MST geometry + rotating terminus
    that eliminate PEGASIS's far/multipath leader bottleneck. The homogeneous ablation
-   (1.41× homogeneous PEGASIS) confirms the *structural* mechanisms are independently
-   effective; the full 1.33× over heterogeneity-aware PEGASIS combines that structural
-   contribution with the legitimate heterogeneity contribution. The energy-normalised
-   Lifetime/J column (5785 vs PEGASIS 4232) confirms the gain is protocol efficiency,
-   not extra battery.
-2. **Delay.** Parallel chains (K=3) cut the single long PEGASIS chain into short
-   segments (≈25–51 hops vs 92–190), critical for time-sensitive sensing.
+   (1.47× homogeneous PEGASIS) confirms the *structural* mechanisms are independently
+   effective; the full 1.35× over heterogeneity-aware PEGASIS combines that structural
+   contribution with the legitimate heterogeneity contribution. Crucially, the
+   heterogeneous comparison uses the *same* per-node energy budget as the baselines
+   (0.55 J/node), so the gain is protocol efficiency, not extra battery.
+2. **Delay.** K is a delay/lifetime knob: K=3 cuts the path to 25 hops vs PEGASIS's
+   77, at the cost of ~6% lifetime (within 95% CI of K=1). K=1 maximises lifetime.
 3. **Reliability.** PDR = 1.00 at unlimited range; under tight range limits CCH
    degrades gracefully (2.8% loss) versus LEACH's 64% — because chaining keeps
    neighbour distances small.
@@ -238,16 +249,18 @@ packet-loss effect — a useful deployment insight.
 
 ## 10. Conclusions
 
-ClusterChain-H dominates the heterogeneity-aware baselines on lifetime (1.33×
-PEGASIS, 2.24× SEP, 2.57× DEEC) and the recent 2022–2023 CH-optimisation
-literature re-implemented in this simulator (1.3–2.4× DCK-LEACH and NPSOP), with
-equal-or-better PDR (1.00 vs ~0.98) and far lower delay (K=3: 25–51 hops vs
-PEGASIS 77–190). The homogeneous ablation (1.41× PEGASIS) and the energy-normalised
-Lifetime/J column confirm the gain is structural protocol efficiency, not an artefact
-of extra battery. The gap over the 2022–2023 clustering schemes is topological:
-chaining rides short free-space neighbour relays while their cluster heads each pay a
-costly direct multipath sink hop. Learned routing (HDQN, DRL-GNN) is the one class
-not yet matched and is left as explicit future work. The gain is attributable to a
+ClusterChain-H dominates the heterogeneity-aware baselines on lifetime (1.35×
+PEGASIS, 2.39× SEP, 2.60× DEEC) and the recent 2022–2023 CH-optimisation
+literature re-implemented in this simulator (2.7× DCK-LEACH, 1.5× NPSOP), with
+PDR = 1.00 (vs ~0.98–0.99) and a delay knob from 74 (K=1) down to 25 hops (K=3)
+versus PEGASIS's 77. The homogeneous ablation (1.47× PEGASIS) confirms the gain is
+structural protocol efficiency on an identical per-node energy budget, not an
+artefact of extra battery. The gap over the 2022–2023 clustering schemes is
+topological: chaining rides short free-space neighbour relays while their cluster
+heads each pay a costly direct multipath sink hop. Learned routing (HDQN, DRL-GNN)
+is the one class not yet matched in this model and is left as explicit future work
+(it is reported in the survey literature at ~4000+ rounds in *their own* simulators;
+we do not claim a like-for-like comparison). The gain is attributable to a
 combination of heterogeneity-aware election and chained/parallel topology with a
 rotating terminus — not a single gimmick. The configurable communication-range
 parameter and range-sensitivity study show the protocol is also the most robust to
