@@ -178,24 +178,24 @@ NPSOP) are re-implemented in this same simulator — not cited from their papers
 | Protocol | Lifetime (rnd) | 95% CI | PDR | Delay (hops) | vs PEGASIS |
 |----------|---------------:|------:|----:|-------------:|-----------:|
 | LEACH | 916 | ±8 | 0.98 | 1.0 | 0.39× |
-| PEGASIS | 2333 | ±36 | 0.99 | 77.2 | 1.00× |
-| DEEC | 1222 | ±26 | 0.99 | 1.0 | 0.52× |
-| SEP | 1375 | ±35 | 0.99 | 1.0 | 0.59× |
-| DCK-LEACH (2022) | 1166 | ±9 | 1.00 | 3.0 | 0.50× |
-| NPSOP (2023) | 2172 | ±84 | 1.00 | 2.0 | 0.93× |
-| **ClusterChain-H (K=1)** | **3113** | ±104 | **0.96** | 73.9 | **1.33×** |
-| **ClusterChain-H (K=2)** | **3031** | ±110 | **0.98** | 37.2 | **1.30×** |
-| **ClusterChain-H (K=3)** | **2945** | ±115 | **0.98** | 24.7 | **1.26×** |
+| PEGASIS | 2291 | ±41 | 0.99 | 77.2 | 1.00× |
+| DEEC | 1203 | ±28 | 0.99 | 1.0 | 0.52× |
+| SEP | 1358 | ±46 | 0.99 | 1.0 | 0.59× |
+| DCK-LEACH (2022) | 1171 | ±12 | 1.00 | 3.0 | 0.51× |
+| NPSOP (2023) | 2092 | ±110 | 1.00 | 2.0 | 0.91× |
+| **ClusterChain-H (K=1)** | **3038** | ±127 | **0.96** | 73.9 | **1.33×** |
+| **ClusterChain-H (K=2)** | **2931** | ±153 | **0.98** | 37.2 | **1.28×** |
+| **ClusterChain-H (K=3)** | **2819** | ±159 | **0.98** | 24.7 | **1.23×** |
 
 ClusterChain-H delivers **1.33× the lifetime of heterogeneity-aware PEGASIS**
-(3113 vs 2333), **2.26× SEP** (1375) and **2.55× DEEC** (1222). Its PDR (0.96 at
+(3038 vs 2291), **2.24× SEP** (1358) and **2.53× DEEC** (1203). Its PDR (0.96 at
 K=1) is marginally *below* the baselines' ~0.99 — an honest, expected consequence of
 the single-chain topology: when the rotating terminus dies on its sink hop, the whole
 round's fused payload is lost, exactly as in vanilla PEGASIS. This is the measured
 trade-off for the long lifetime, not a counting artifact. Against the recent
-literature it reaches **2.7× DCK-LEACH** (3113 vs 1166) and **1.4× NPSOP** (3113 vs
-2172). **K is a delay/lifetime knob, not a hidden winner**: K=1/2/3 lifetimes
-(3113/3031/2945) sit within each other's 95% CI, and higher K strictly lowers delay
+literature it reaches **2.7× DCK-LEACH** (3038 vs 1171) and **1.5× NPSOP** (3038 vs
+2092). **K is a delay/lifetime knob, not a hidden winner**: K=1/2/3 lifetimes
+(3038/2931/2819) sit within each other's 95% CI, and higher K strictly lowers delay
 (74→37→25 hops). The best lifetime config (K=1) is reported as the headline; K=3 is
 the low-delay option (25 hops vs PEGASIS's 77) for time-sensitive sensing.
 

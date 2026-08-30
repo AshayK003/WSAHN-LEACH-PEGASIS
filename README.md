@@ -42,14 +42,14 @@ Network lifetime, delivery and delay averaged over **20 seeded runs**
 | Protocol | Last node dead | PDR | Delay (hops) | vs PEGASIS |
 |----------|--------------:|----:|------------:|-----------:|
 | LEACH (het) | 916 | 0.98 | 1.0 | 0.39x |
-| PEGASIS (het) | 2333 | 0.99 | 77.2 | 1.00x |
-| SEP | 1375 | 0.99 | 1.0 | 0.59x |
-| DEEC | 1222 | 0.99 | 1.0 | 0.52x |
-| DCK-LEACH (2022) | 1166 | 1.00 | 3.0 | 0.50x |
-| NPSOP (2023) | 2172 | 1.00 | 2.0 | 0.93x |
-| **ClusterChain-H (K=1)** | **3113** | **0.96** | 73.9 | **1.33x** |
-| **ClusterChain-H (K=2)** | **3031** | **0.98** | 37.2 | **1.30x** |
-| **ClusterChain-H (K=3)** | **2945** | **0.98** | 24.7 | **1.26x** |
+| PEGASIS (het) | 2291 | 0.99 | 77.2 | 1.00x |
+| SEP | 1358 | 0.99 | 1.0 | 0.59x |
+| DEEC | 1203 | 0.99 | 1.0 | 0.52x |
+| DCK-LEACH (2022) | 1171 | 1.00 | 3.0 | 0.51x |
+| NPSOP (2023) | 2092 | 1.00 | 2.0 | 0.91x |
+| **ClusterChain-H (K=1)** | **3038** | **0.96** | 73.9 | **1.33x** |
+| **ClusterChain-H (K=2)** | **2931** | **0.98** | 37.2 | **1.28x** |
+| **ClusterChain-H (K=3)** | **2819** | **0.98** | 24.7 | **1.23x** |
 | **ClusterChain-H + rotating relay-sink** | **4554** | **1.00** | 73.5 | **1.99x** |
 
 **Rotating relay-sink tier.** Adding a relay-collection tier (relays rotated
@@ -72,7 +72,7 @@ whole round, counted consistently across all protocols) and a tunable delay
 (K=3: 25 hops vs PEGASIS 77). Against the 2022–2023 CH-optimisation literature it
 reaches **2.7x DCK-LEACH** and **1.4x NPSOP** — both re-implemented in this same
 simulator, not cited from their papers. **K is a delay/lifetime knob, not a hidden
-winner**: K=1/2/3 lifetimes (3113/3031/2945) are within each other's 95% CI, and
+winner**: K=1/2/3 lifetimes (3038/2931/2819) are within each other's 95% CI, and
 higher K strictly lowers delay.
 
 A **homogeneous ablation** (no advanced nodes; geometry + rotating terminus only)

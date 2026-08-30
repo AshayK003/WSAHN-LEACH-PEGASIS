@@ -8,13 +8,19 @@ from clusterchain_h import ClusterChainH, optimal_k
 from recent_variants import DualHead, PSOCH
 
 M, A = 0.1, 2.0
-MAX_ROUNDS = 4000
+MAX_ROUNDS = 6000
 SEEDS = [1000 + i * 7 for i in range(20)]
 
 
 def run(cls, n, seeds, **kw):
     out = []
     for s in seeds:
+        # Seed BOTH RNGs so every protocol sees the identical node topology
+        # for a given seed (ClusterChainH.__init__ draws positions via
+        # random.uniform). Without random.seed the LAST values are not
+        # reproducible from seeds alone.
+        import random as _r
+        _r.seed(s)
         np.random.seed(s)
         out.append(cls(n_nodes=n, **kw).run(MAX_ROUNDS))
     return out

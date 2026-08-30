@@ -27,18 +27,18 @@ All protocols are evaluated under a single first-order radio model with
 **identical deployment conditions** (100 nodes, 10% advanced nodes at 2x initial
 energy, 20 seeded runs): lifetime is normalised by per-node energy budget so gains
 are not an artefact of extra battery. In this fair comparison the best ClusterChain-H
-configuration (K=1, 3113 ± 104 rounds) achieves **1.33x the lifetime of
-heterogeneity-aware PEGASIS (2333 ± 36)**, **2.26x SEP (1375 ± 35)** and
-**2.55x DEEC (1222 ± 26)**, with **PDR = 0.96** (PEGASIS 0.99; the small gap is a
+configuration (K=1, 3038 ± 127 rounds) achieves **1.33x the lifetime of
+heterogeneity-aware PEGASIS (2291 ± 41)**, **2.24x SEP (1358 ± 46)** and
+**2.53x DEEC (1203 ± 28)**, with **PDR = 0.96** (PEGASIS 0.99; the small gap is a
 single-chain terminus death clearing the round, an accepted cost of the long
 lifetime) and end-to-end delay of **25-74 hops versus PEGASIS's 77**. K is a
 delay/lifetime knob, not a hidden winner: K=1-3 are within each other's 95% CI on
-lifetime (3113/3031/2945), and higher K strictly lowers delay (74/37/25 hops).
+lifetime (3038/2931/2819), and higher K strictly lowers delay (74/37/25 hops).
 To test against the recent literature we re-implemented two 2022-2023 CH-optimisation
 schemes (DCK-LEACH dual cluster-head, NPSOP PSO cluster-head selection) inside the
 same model: both remain clustering protocols whose heads pay a direct multipath sink
-hop, and ClusterChain-H outperforms them by **2.7x DCK-LEACH (3113 vs 1166)** and
-**1.4x NPSOP (3113 vs 2172)** in lifetime. A homogeneous ablation (geometry +
+hop, and ClusterChain-H outperforms them by **2.7x DCK-LEACH (3038 vs 1171)** and
+**1.5x NPSOP (3038 vs 2092)** in lifetime. A homogeneous ablation (geometry +
 rotation only, no heterogeneity) yields **1.45x the lifetime of homogeneous PEGASIS
 (1741 vs 1200 rounds)**, confirming the structural mechanisms are independently
 effective; the full heterogeneous gain combines that structural contribution with the
