@@ -441,7 +441,34 @@ compounds — pushing the win from 1.30× (static) to **1.50×** (rotating). The
 epoch length *E* (25/50/100) is irrelevant to the result, so the mechanism is
 not over-fit to a tuning parameter.
 
-### 12.3 Scale robustness
+### 12.3 Why the election cannot beat geometry on lifetime
+
+The H-PEGASIS result (§9.1: 3084 rounds, within CI of CCH-K1's 3038) raises a
+natural question: can a *smarter election* push lifetime above the MST+rotation
+ceiling? We tested the most principled candidate — **energy-ordered chain
+traversal**, where the linear chain order is sorted by descending residual energy so
+the highest-energy node carries the largest relay fan-in and the lowest-energy node
+the smallest. The intuition: a low-energy node dying early should lose few upstream
+packets.
+
+| Configuration | LAST | vs H-PEGASIS | PDR | Note |
+|---|---|---|---|---|
+| H-PEGASIS (geometry + rotation) | 3084 ± 61 | 1.00× | 0.99 | ceiling |
+| CCH-K1 (election + rotation) | 3038 ± 127 | 0.99× | 0.96 | matches |
+| Energy-ordered chain | 2534 ± 90 | **0.82×** | ~0.99 | *worse* |
+
+The energy ordering **degrades** lifetime by 18%. Sorting by energy discards the
+MST's short-link property: the extra transmit cost from longer hops outweighs the
+relay-fan-in savings, because the rotating terminus already places the
+highest-energy node on the dominant (multipath) sink hop. This is direct evidence
+that **link geometry, not relay-fairness, is the binding constraint on lifetime**
+under the first-order model — which is exactly why H-PEGASIS's geometry refinement
+is the right structural baseline and why CCH's election contributes *fairness*
+(§9.2: normal nodes survive 2.56× longer) rather than additional longevity. Any
+claim that a better election beats H-PEGASIS on lifetime would have to overcome this
+0.82× result.
+
+### 12.4 Scale robustness
 
 The 1.50× is not a small-network artefact. Holding the per-node energy budget
 and 20-seed protocol fixed, the rotating relay tier keeps its margin at larger
@@ -457,7 +484,7 @@ The margin softens slightly with scale (1.50 → 1.36×) because the fixed relay
 zone serves proportionally more nodes, but PDR stays at 1.00 and no relay fails
 at any scale — the result is robust, not a single-topology coincidence.
 
-### 12.4 Interpretation
+### 12.5 Interpretation
 
 Of the three leading literature-prescribed mechanisms, only the relay-sink tier
 beats the existing design, and only when the relay role is **rotated** rather
