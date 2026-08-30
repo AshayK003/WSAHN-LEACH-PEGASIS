@@ -210,6 +210,7 @@ NPSOP) are re-implemented in this same simulator — not cited from their papers
 | SEP | 1358 | ±46 | 0.99 | 1.0 | 0.59× |
 | DCK-LEACH (2022) | 1171 | ±12 | 1.00 | 3.0 | 0.51× |
 | NPSOP (2023) | 2092 | ±110 | 1.00 | 2.0 | 0.91× |
+| H-PEGASIS (2009, geometry only) | 3084 | ±120 | 0.99 | 75.5 | 1.35× |
 | **ClusterChain-H (K=1)** | **3038** | ±127 | **0.96** | 73.9 | **1.33×** |
 | **ClusterChain-H (K=2)** | **2931** | ±153 | **0.98** | 37.2 | **1.28×** |
 | **ClusterChain-H (K=3)** | **2819** | ±159 | **0.98** | 24.7 | **1.23×** |
@@ -223,6 +224,20 @@ trade-off for the long lifetime, not a counting artifact. Against the recent
 literature it reaches **2.7× DCK-LEACH** (3038 vs 1171) and **1.5× NPSOP** (3038 vs
 2092). **K is a delay/lifetime knob, not a hidden winner**: K=1/2/3 lifetimes
 (3038/2931/2819) sit within each other's 95% CI, and higher K strictly lowers delay
+
+**Decomposition of the gain (where the lifetime comes from).** Adding H-PEGASIS —
+the MST-refined chain geometry + rotating leader, run *homogeneously* (no
+heterogeneity-aware election) — already yields **3084 rounds (1.35× PEGASIS)**. This
+isolates the structural contribution: the geometry + rotation mechanism alone accounts
+for essentially the entire lifetime jump over vanilla PEGASIS. ClusterChain-H (3038)
+matches H-PEGASIS on lifetime (within 95% CI) while *adding* the SEP/DEEC-style
+heterogeneity-aware election. The election does not extend raw lifetime further because
+the rotating terminus already balances the relay load well; its value is **fairness**,
+not longevity — as §9.2 shows, CCH's election spares normal nodes 2.56× longer than
+advanced nodes survive after them, a property H-PEGASIS (homogeneous election) does not
+provide. The combination therefore reproduces H-PEGASIS's geometry gain *and* adds a
+heterogeneity fairness guarantee at zero lifetime cost — which is why it still beats the
+heterogeneity-only baselines SEP (2.24×) and DEEC (2.53×) by a wide margin.
 (74→37→25 hops). The best lifetime config (K=1) is reported as the headline; K=3 is
 the low-delay option (25 hops vs PEGASIS's 77) for time-sensitive sensing.
 

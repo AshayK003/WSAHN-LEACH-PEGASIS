@@ -6,6 +6,7 @@ from sep import SEP
 from deec import DEEC
 from clusterchain_h import ClusterChainH, optimal_k
 from recent_variants import DualHead, PSOCH
+from hpegasis import HPEGASIS
 
 M, A = 0.1, 2.0
 MAX_ROUNDS = 6000
@@ -45,6 +46,7 @@ protos = {
     'CCH-ADP': run(ClusterChainH, 100, SEEDS, m=M, a_mult=A, mode='adaptive', K=5),
     'CCH-CLUSTK1': run(ClusterChainH, 100, SEEDS, m=M, a_mult=A, mode='clustered', K=1,
                        adaptive_k=False),
+    'H-PEGASIS': run(HPEGASIS, 100, SEEDS, m=M, a_mult=A),
 }
 print('optimal_k used by clustered mode: n=100 ->', optimal_k(100, 1),
       ', n=50 ->', optimal_k(50, 1))
@@ -63,7 +65,7 @@ with open('eval_canonical.json', 'w') as f:
 base = result['PEGASIS']['LAST'][0]
 print(f'{"protocol":14s} {"LAST":>7s} {"CI":>6s} {"xPEG":>5s} {"FND":>6s} {"PDR":>5s} {"DELAY":>6s}')
 for k in ['LEACH', 'PEGASIS', 'DEEC', 'SEP', 'DCK-LEACH22', 'NPSOP23',
-          'CCH-K1', 'CCH-K2', 'CCH-K3', 'CCH-ADP', 'CCH-CLUSTK1']:
+          'CCH-K1', 'CCH-K2', 'CCH-K3', 'CCH-ADP', 'CCH-CLUSTK1', 'H-PEGASIS']:
     m, c = result[k]['LAST']
     print(f'{k:14s} {m:7.0f} ±{c:4.0f} {m/base:5.2f} {result[k]["FND"][0]:6.0f} '
           f'{result[k]["PDR"][0]:5.2f} {result[k]["DELAY"][0]:6.1f}')

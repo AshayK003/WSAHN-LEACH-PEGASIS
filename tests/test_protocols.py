@@ -9,6 +9,7 @@ from pegasis import PEGASIS
 from sep import SEP
 from deec import DEEC
 from clusterchain_h import ClusterChainH
+from hpegasis import HPEGASIS
 
 
 def _last(hists):
@@ -32,7 +33,8 @@ def _run(cls, n_nodes=100, seeds=(42, 142, 242), **kw):
 def test_all_protocols_run_and_alive_nonincreasing():
     for cls, kw in [(LEACH, {}), (PEGASIS, {}), (SEP, dict(m=0.1, a_mult=2.0)),
                     (DEEC, dict(m=0.1, a_mult=2.0)),
-                    (ClusterChainH, dict(m=0.1, a_mult=2.0, mode='multichain', K=3))]:
+                    (ClusterChainH, dict(m=0.1, a_mult=2.0, mode='multichain', K=3)),
+    (HPEGASIS, dict(m=0.1, a_mult=2.0))]:
         h = _run(cls, **kw)[0]
         alive = [a for _, a, *_ in h]
         assert all(alive[i] >= alive[i + 1] for i in range(len(alive) - 1)), \

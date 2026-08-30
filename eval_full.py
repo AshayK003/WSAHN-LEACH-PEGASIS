@@ -13,6 +13,7 @@ from sep import SEP
 from deec import DEEC
 from clusterchain_h import ClusterChainH
 from recent_variants import DualHead, PSOCH
+from hpegasis import HPEGASIS
 
 M, A = 0.1, 2.0
 MAX_ROUNDS = 6000
@@ -73,6 +74,7 @@ def protos_hetero(n, seeds):
         'DEEC': run(DEEC, n, seeds, m=M, a_mult=A),
         'DCK-LEACH22': run(DualHead, n, seeds, m=M, a_mult=A, K=5),
         'NPSOP23': run(PSOCH, n, seeds, m=M, a_mult=A, K=5),
+        'H-PEGASIS': run(HPEGASIS, n, seeds, m=M, a_mult=A),
         'CCH-K1': run(ClusterChainH, n, seeds, m=M, a_mult=A, mode='multichain', K=1),
         'CCH-K2': run(ClusterChainH, n, seeds, m=M, a_mult=A, mode='multichain', K=2),
         'CCH-K3': run(ClusterChainH, n, seeds, m=M, a_mult=A, mode='multichain', K=3),

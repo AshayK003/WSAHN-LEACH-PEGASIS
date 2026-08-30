@@ -34,6 +34,14 @@ single-chain terminus death clearing the round, an accepted cost of the long
 lifetime) and end-to-end delay of **25-74 hops versus PEGASIS's 77**. K is a
 delay/lifetime knob, not a hidden winner: K=1-3 are within each other's 95% CI on
 lifetime (3038/2931/2819), and higher K strictly lowers delay (74/37/25 hops).
+**Where the gain comes from.** An H-PEGASIS baseline (MST-refined geometry + rotating
+leader, run homogeneously) already reaches **3084 ± 120 rounds (1.35x PEGASIS)**,
+showing the structural mechanism accounts for nearly the entire lifetime jump;
+ClusterChain-H matches this geometry gain while adding the heterogeneity-aware election,
+which does not extend raw lifetime further (the rotating terminus already load-balances)
+but guarantees fairness — normal nodes survive 2.56x longer than advanced nodes (Section
+9.2) — at zero lifetime cost, and still beats the heterogeneity-only baselines SEP/DEEC
+by 2.2-2.5x.
 To test against the recent literature we re-implemented two 2022-2023 CH-optimisation
 schemes (DCK-LEACH dual cluster-head, NPSOP PSO cluster-head selection) inside the
 same model: both remain clustering protocols whose heads pay a direct multipath sink
