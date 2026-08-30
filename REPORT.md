@@ -39,6 +39,8 @@ lifetime, packet delivery, delay, and energy trade-off, and why?*
 | SEP [3] | 2004 | Heterogeneous (2-level) CH election | Static 2-level only |
 | DEEC [4] | 2006 | Heterogeneity + residual-energy CH prob. | Still cluster-only, direct to sink |
 | Multi-leader PEGASIS variants | — | Multiple chain leaders / double chains | Added complexity, no heterogeneity |
+| H-PEGASIS | 2009 | MST-refined chain geometry + rotating leader | Homogeneous only; no heterogeneity-aware election |
+| PDCH | 2012 | Chain partitioning + dual-cluster-head hybrid | Homogeneous; ignores node-type energy weighting |
 | DCK-LEACH [6] | 2022 | Dual cluster-head (primary + vice), K-means/Canopy | Cluster-only; vice head still pays a direct multipath sink hop |
 | NPSOP [7] | 2023 | PSO-selected CHs + routing paths | Cluster-only; CH→sink direct hop bounds lifetime |
 | HDQN / DRL-GNN [8] | 2021–2024 | DRL/GNN learned routing | Highest reported lifetime, but needs training + compute on constrained nodes |
@@ -47,6 +49,19 @@ ClusterChain-H generalises SEP/DEEC-style heterogeneity into a **clustering +
 chaining hybrid** and removes the PEGASIS leader hotspot via an energy- and
 sink-proximity **rotating terminus** across **parallel chains**.
 
+**Positioning vs prior chain refinements.** H-PEGASIS (2009) and PDCH (2012)
+already replace greedy chaining with MST-refined geometry and a rotating leader,
+but both are *homogeneous* protocols: every node carries the same initial energy,
+so their election cannot exploit heterogeneity. The contribution of ClusterChain-H
+is the **fusion** of MST+rotation chain geometry with SEP/DEEC-style
+heterogeneity-aware election — advanced (2×-energy) nodes are steered toward the
+expensive relay/aggregation roles while normal nodes are spared. This is a
+combination, not a new primitive; its value is that it retains H-PEGASIS/PDCH's
+geometry gains *and* adds the heterogeneity margin that those protocols forgo.
+We therefore benchmark against H-PEGASIS/PDCH-style geometry as the structural
+baseline and against SEP/DEEC as the heterogeneity baseline, and show the
+combination (2.24× SEP, 2.53× DEEC) exceeds either axis alone.
+
 **Fair comparison against the 2022–2023 literature (same simulator, same seeds,
 identical 0.55 J/node budget, 20 runs, full heterogeneous deployment).** Recent
 CH-optimisation schemes improve *clustering* but every cluster head still performs
@@ -54,20 +69,20 @@ one expensive direct multipath hop to the sink (75 m away, beyond the D0 crossov
 which bounds their lifetime. To test this directly we re-implemented DCK-LEACH's
 dual-head election and NPSOP's PSO CH-selection inside our own energy model and ran
 them head-to-head with ClusterChain-H on all four metrics. The full 9-protocol table
-is in §9. Headline result (best CCH config, K=1, 3162 ± 100 rounds):
+headline result (best CCH config, K=1, 3038 ± 127 rounds):
 
 | Protocol | Lifetime (rnd) | vs best CCH | PDR | Delay (hops) |
 |----------|--------------:|------------:|----:|------------:|
-| DCK-LEACH (dual head, 2022) | 1166 | 0.37× | 1.00 | 3.0 |
-| NPSOP (PSO CH, 2023) | 2172 | 0.70× | 1.00 | 2.0 |
-| **ClusterChain-H (K=1, best)** | **3113** | **1.00×** | **0.96** | **73.9** |
-| ClusterChain-H (K=3, low-delay) | 2945 | 0.95× | 0.98 | 24.7 |
+| DCK-LEACH (dual head, 2022) | 1171 | 0.39× | 1.00 | 3.0 |
+| NPSOP (PSO CH, 2023) | 2092 | 0.69× | 1.00 | 2.0 |
+| **ClusterChain-H (K=1, best)** | **3038** | **1.00×** | **0.96** | **73.9** |
+| ClusterChain-H (K=3, low-delay) | 2819 | 0.93× | 0.98 | 24.7 |
 
 ClusterChain-H outperforms both recent schemes by **2.7× over DCK-LEACH** and
-**1.4× over NPSOP** in lifetime. The gap is topological, not a tuning artifact:
+**1.5× over NPSOP** in lifetime. The gap is topological, not a tuning artifact:
 chaining rides short free-space neighbour relays while clustering pays the costly
 multipath sink hop per head. **K is a delay/lifetime knob, not a hidden winner** —
-K=1/2/3 lifetimes (3113/3031/2945) are statistically tied within 95% CI, and higher
+K=1/2/3 lifetimes (3038/2931/2819) are statistically tied within 95% CI, and higher
 K strictly lowers delay (74→37→25 hops). We therefore position the 2022–2023
 clustering literature as baselines we beat, and flag **learned routing (HDQN,
 DRL-GNN)** — reported in the survey literature to reach ~4000+ rounds *in their own
@@ -123,7 +138,18 @@ communication-range requirement and is exercised in Scenario 2.
      residual energy and sink proximity, rotated every round (removes the leader
      hotspot).
    - **Adaptive chain density K**: parallel chains trade the extra sink hops for
-     lower delay (homogeneous ablation still gives 1.48× PEGASIS lifetime).
+     lower delay (homogeneous ablation still gives 1.45× PEGASIS lifetime).
+
+   **Why K=1 is lifetime-optimal.** The per-round energy of the clustered
+   construction is the sum of (i) member→CH free-space tx at link length
+   d_m ~ a/√k, (ii) N CH receptions + aggregations, (iii) (k−1) head-chain relay
+   links at d_c ~ b/k, and (iv) k multipath sink hops at the dominant cost
+   E_MP·D⁴. Every additional parallel chain (k > 1) adds one more expensive
+   multipath sink hop while only marginally shortening the intra-chain relays, so
+   the energy-minimising chain count is k = 1. We confirm this analytically with
+   the `optimal_k` routine (minimises e_round(k) over k) and empirically: K=1/2/3
+   lifetimes (3038/2931/2819) are within 95% CI, so the single-chain config is the
+   frugal point and higher K is purely a delay lever (74→37→25 hops).
 
 ---
 
@@ -138,7 +164,8 @@ communication-range requirement and is exercised in Scenario 2.
 | Packet size | 4000 bits |
 | Traffic pattern | Periodic: 1 packet/source/round, in-network fused |
 | COMM_RANGE | Unlimited (default); 35 m (Scenario 2) |
-| Seeds | 20 (N=100): `1000 + 7i`; 8 (N=200): fixed set |
+| Seeds | 20 (N=100): `1000 + 7i`; 8 (N=200): fixed set; 8 (N=500): fixed set |
+| Max rounds | 6000 (full lifetime to last-node-death; both RNGs seeded per seed) |
 | Metrics | Throughput, PDR, E2E delay, energy, lifetime, loss |
 
 ---
