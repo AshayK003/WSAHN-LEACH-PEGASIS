@@ -296,6 +296,7 @@ class ClusterChainH:
         self.relay_forward_total = 0.0
         self.relay_dead_round = None
         self._relay_epoch = -1
+        self.class_history = []  # (round, n_adv_alive, n_norm_alive) per round
 
         self.nodes = []
         n_adv = int(round(m * n_nodes))
@@ -649,6 +650,9 @@ class ClusterChainH:
 
         self.alive_count = sum(1 for n in self.nodes if n.alive)
         pdr = m['received'] / max(1, m['sent'])
+        n_adv = sum(1 for n in self.nodes if n.alive and n.is_advanced)
+        n_norm = self.alive_count - n_adv
+        self.class_history.append((self.round, n_adv, n_norm))
         self.history.append((
             self.round, self.alive_count, m['tx'] + m['rx'], pdr,
             m['delay'], m['sent'], m['received'],

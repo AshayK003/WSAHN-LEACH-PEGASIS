@@ -1,25 +1,11 @@
-"""Experimental Relay-Sink variant (static relay tier, no mobility).
+"""Experimental Relay-Sink prototype — SUPERSEDED by ClusterChainH(mode='relay').
 
-The review's highest-upside-but-highest-proof-burden candidate is a mobile /
-relay sink. To isolate the GEOMETRIC benefit from mobility accounting, we test
-a STATIC relay-sink tier instead of a moving sink: fixed relay collection
-points sit closer to the field than the off-field base station at (50,175).
-Each chain's terminus jumps to its nearest relay instead of the far BS, which
-is the same energy it would spend on the sink hop -- just over a shorter
-distance. The relay then forwards to the BS.
-
-Two honesty modes:
-  relay_energy=None  -> UNLIMITED relay (infrastructure subsidy NOT charged):
-                        shows the maximum geometric upside only.
-  relay_energy=0.5  -> BUDGETED relay (per-relay battery == one node):
-                        exposes whether the relay becomes a new bottleneck.
-
-Fairness: the sensor-side energy (terminus -> relay) is charged exactly like
-the baseline's terminus -> sink hop, so sensor LAST is a like-for-like
-comparison. The relay -> BS forward hop is infrastructure and is tracked in
-self.relay_energy separately, never folded into sensor energy. If a budgeted
-relay's battery is exhausted, its chains fall back to direct terminus -> BS
-(charged to the sensor, as baseline does).
+The rotating relay-sink tier implemented here was folded into the core protocol
+as a first-class `mode='relay'` in clusterchain_h.py (verified identical results:
+~2.0x homogeneous PEGASIS, neutral PDR). This file is retained as the ABLATION
+EVIDENCE TRAIL: it holds the original static-relay and rotating-relay subclasses
+and is imported by eval_relaysink.py / eval_relayrotation.py, which generate the
+reproducible numbers in REPORT.md §12. Do not delete — it anchors the audit trail.
 """
 import numpy as np
 from clusterchain_h import (

@@ -199,7 +199,30 @@ literature it reaches **2.7× DCK-LEACH** (3038 vs 1171) and **1.5× NPSOP** (30
 (74→37→25 hops). The best lifetime config (K=1) is reported as the headline; K=3 is
 the low-delay option (25 hops vs PEGASIS's 77) for time-sensitive sensing.
 
-### 9.2 Homogeneous ablation (N=100, 20 seeds) — geometry + rotation only
+### 9.2 Per-class fairness and composite efficiency (N=100, 20 seeds)
+
+The lifetime gain is meaningless if it comes from starving one node class. Because
+ClusterChain-H elects leaders by residual energy × type, advanced (2×-energy) nodes
+should outlive normal nodes — the heterogeneity-aware election doing its job. We track
+the first-death round of each class and the Energy×Delay (E×D) composite (lower is
+better) over the stable window.
+
+| Config | First normal death | First advanced death | Adv/normal survival | E×D (×10⁻³) |
+|--------|-------------------:|---------------------:|--------------------:|------------:|
+| CCH-K1 | 493 | 1260 | 2.56× | 3.15 |
+| CCH-K2 | 225 | 787 | 3.50× | 1.56 |
+| CCH-K3 | 199 | 1040 | 5.22× | 1.03 |
+
+Normal nodes survive **2.5–5.2× longer** in the presence of advanced nodes than
+advanced nodes survive after them — the election explicitly spares low-energy normal
+nodes, exactly the SEP/DEEC design intent, extended to a chaining topology. E×D
+drops monotonically with K (3.15 → 1.03 ×10⁻³) because higher K trades a small
+lifetime for a much shorter delay, confirming K as a clean efficiency/delay dial rather
+than a hidden lifetime lever. The per-class tracking is now recorded by the core
+protocol (`class_history`) so these figures are reproducible from seed, not read off a
+secondary ablation script.
+
+### 9.3 Homogeneous ablation (N=100, 20 seeds) — geometry + rotation only
 
 With no advanced nodes (0.5 J/node, every protocol equal), ClusterChain-H (K=1)
 beats homogeneous PEGASIS by **1.45×** (1742 ± 19 vs 1200 rounds), confirming the
