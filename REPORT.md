@@ -304,6 +304,103 @@ are open in the repository.
 
 ---
 
+## 12. Mechanism Ablation Study
+
+To test whether newer literature-prescribed mechanisms actually improve on the
+ClusterChain-H multichain K=1 design, we ran a controlled A/B ablation under
+the fixed benchmark of Section 2 (100 nodes, 100×100 m field, sink at (50,175),
+first-order radio model, 0.5/1.0 J heterogeneity, 4000-bit packets, 20 seeds).
+Every protocol shares `energy.py`; both `random` and `numpy` are seeded per
+seed so each protocol sees the **identical node topology** (like-for-like, not
+merely in expectation). Metrics: FND, LAST, PDR, hop delay, and per-class
+(first-death split by node type) where instrumented.
+
+### 12.1 Mechanisms that do NOT improve on the baseline
+
+| Mechanism (literature rank) | LAST | vs K1 | FND | PDR | Note |
+|---|---|---|---|---|---|
+| Multichain K=1 (baseline) | 3038 ± 127 | 1.00× | 493 | 0.97 | — |
+| Multichain K=3 (delay ref) | 2819 | 0.93× | 199 | 0.98 | delay 24.7 vs 74.5 |
+| Energy-gradient relay (#5) | 2480 / 2233 | 0.82× / 0.73× | 986 / 1238 | 1.00 | raises per-round cost |
+| Selective dual-terminus (#7) | 3055 / 2815 | 1.01× / 0.93× | 343 / 166 | 0.96 | failover rarely fires |
+
+The energy-gradient relay (RACR-style residual-energy / distance / progress
+next-hop score) spreads load — FND rises to 986–1238 — but its greedy local
+score ignores the global per-round energy floor that the MST construction
+minimises, so total radio cost per round rises and the whole network collapses
+sooner (0.73–0.82×). The selective dual-terminus (vice node added only to long
+chains, activated on primary-terminus death) is statistically indistinguishable
+from baseline (1.01×): near end-of-life the vice is also depleted, so the
+failover almost never triggers. Per-class curves confirm heterogeneity works as
+intended — in the dual-terminus run, normal nodes die at ~356 while advanced
+nodes survive to ~1113.
+
+### 12.2 The mechanism that DOES: rotating relay-sink tier
+
+The review's highest-upside candidate is a mobile / relay sink. To isolate the
+geometric benefit from mobility accounting, we test a **static relay tier**:
+fixed relay collection points sit closer to the field than the off-field base
+station at (50,175). Each chain's terminus jumps to its nearest relay (charged
+to the sensor exactly like the baseline's terminus→sink hop); the relay→BS
+forward is infrastructure, tracked separately and never folded into sensor
+energy.
+
+- **Unlimited relay**: 3952 ± 151 (1.30×), PDR 1.00. Pure geometric win.
+- **Budgeted 0.5 J relay** (per-relay battery equal to one node): still 3952
+  lifetime (1.30×) — but the fixed relay **dies at round 341**, after which PDR
+  collapses to 0.19. Sensor lifetime is real; the network is useless past 341.
+
+The budgeted failure is a *concentration* problem: one fixed node foots the
+full relay→BS multipath cost. **Rotating the relay role** every *E* rounds
+(re-select the highest-residual nodes in the relay zone, each with a fresh 0.5 J
+budget) spreads that cost across the network:
+
+| Relay config | LAST | vs K1 | FND | PDR | PDR > 341 | relay dies |
+|---|---|---|---|---|---|---|
+| Static budgeted (no rot) | 3952 ± 151 | 1.30× | 595 | 0.19 | 0.01 | round 341 |
+| Rotate every 25 | 4557 ± 164 | **1.50×** | 595 | 1.00 | 1.00 | — |
+| Rotate every 50 | 4554 ± 164 | **1.50×** | 595 | 1.00 | 1.00 | — |
+| Rotate every 100 | 4544 ± 169 | **1.50×** | 595 | 1.00 | 1.00 | — |
+
+Rotation does two things at once: it removes the single-point relay failure
+(no relay ever exhausts its budget, `RELAY_DEAD` empty for all three), keeping
+PDR at 1.00 past 341; and because delivery never breaks, the geometric gain
+compounds — pushing the win from 1.30× (static) to **1.50×** (rotating). The
+epoch length *E* (25/50/100) is irrelevant to the result, so the mechanism is
+not over-fit to a tuning parameter.
+
+### 12.3 Scale robustness
+
+The 1.50× is not a small-network artefact. Holding the per-node energy budget
+and 20-seed protocol fixed, the rotating relay tier keeps its margin at larger
+deployments:
+
+| N | baseline LAST | rotating-relay LAST | ×baseline | PDR | PDR > 341 | relay dies |
+|---|---|---|---|---|---|---|
+| 100 | 3038 ± 127 | 4554 ± 164 | 1.50× | 1.00 | 1.00 | — |
+| 200 | 3351 ± 67 | 4660 ± 195 | 1.39× | 1.00 | 1.00 | — |
+| 500 | 3610 ± 22 | 4906 ± 48 | 1.36× | 1.00 | 1.00 | — |
+
+The margin softens slightly with scale (1.50 → 1.36×) because the fixed relay
+zone serves proportionally more nodes, but PDR stays at 1.00 and no relay fails
+at any scale — the result is robust, not a single-topology coincidence.
+
+### 12.4 Interpretation
+
+Of the three leading literature-prescribed mechanisms, only the relay-sink tier
+beats the existing design, and only when the relay role is **rotated** rather
+than fixed. The two "obvious" tweaks (energy-gradient relay, dual terminus)
+either regress or neutralize — a finding the survey literature does not report,
+because almost no paper in the field runs a strict common-benchmark head-to-head.
+The ablation therefore contributes two things: (a) negative evidence that
+popular next-step mechanisms do not displace a clean baseline, and (b) a
+positive, scale-robust 1.50× mechanism (rotating relay tier) with honest
+infrastructure accounting. Scripts and raw JSON results: `cch_experimental.py`,
+`cch_relaysink.py`, `eval_experimental.py`, `eval_dualterminus.py`,
+`eval_relaysink.py`, `eval_relayrotation.py`, `eval_relayscale.py`.
+
+---
+
 ## Appendix: Reproducibility & Artifacts
 
 - `energy.py` — shared first-order radio model + `COMM_RANGE` parameter.
@@ -315,5 +412,11 @@ are open in the repository.
   timeline.
 - `scenarios.py` — communication-range sensitivity + energy-consumption plots.
 - `eval_n100.py`, `eval_scale.py` — 20-seed / 8-seed evaluation harnesses.
+- `cch_experimental.py` — ablation protocol (energy-gradient relay, adaptive-K,
+  selective dual-terminus fail-over).
+- `cch_relaysink.py` — static and rotating relay-sink tier variants.
+- `eval_experimental.py`, `eval_dualterminus.py`, `eval_relaysink.py`,
+  `eval_relayrotation.py`, `eval_relayscale.py` — ablation harnesses
+  (aforementioned mechanisms + scale robustness) with matching `.json` results.
 - Figures: `dashboard3.png`, `death_timeline.png`, `comparison.png`,
   `range_impact.png`, `energy_consumption.png`, `anim_*.gif`.
