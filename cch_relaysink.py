@@ -157,3 +157,58 @@ class RelaySinkClusterChain(ClusterChainH):
             self.history[-1] = self.history[-1] + (tuple(self.relay_energy),)
         return {'round': self.round, 'alive': self.alive_count, 'pdr': pdr,
                 'delay': m['delay'], 'energy': m['tx'] + m['rx']}
+
+
+class RelayRotationClusterChain(RelaySinkClusterChain):
+    """Budgeted relay tier with ROTATION: the relay role is not fixed to two
+    nodes. Every `rotate_every` rounds, re-select the R highest-residual-energy
+    alive nodes (within the relay zone, default the central band) as the new
+    relays. This spreads the relay->BS infrastructure cost across many nodes so
+    no single 0.5J relay dies at round 341 and collapses PDR.
+
+    When rotate_every is None, behaves identically to the static tier (proves
+    the rotation is what changes the result, not something else).
+
+    Energy fairness is unchanged: the sensor-side terminus->relay hop is charged
+    to the sensor exactly like the baseline's terminus->BS hop. The relay->BS
+    forward is infrastructure, tracked in self.relay_forward_total, never folded
+    into sensor energy. Each rotated-in relay starts with a fresh 0.5J budget.
+    """
+
+    def __init__(self, *a, relay_count=2, rotate_every=50, relay_zone=None,
+                 relay_energy=0.5, **kw):
+        # Start with placeholder positions; real ones set on first step.
+        super().__init__(*a, relay_positions=[(50.0, 50.0)] * relay_count,
+                         relay_energy=relay_energy, **kw)
+        self.relay_count = relay_count
+        self.rotate_every = rotate_every
+        # Relay zone: central horizontal band; any alive node landing here is
+        # eligible. Default band is the field's vertical middle third.
+        self.relay_zone = relay_zone or (self.field_y * 0.3, self.field_y * 0.7)
+        self._relay_epoch = 0
+        self.relay_dead_round = None  # first round a relay budget is exhausted
+        self.pdr_after_341 = []  # per-round PDR once round > 341 (probe window)
+
+    def _select_relays(self):
+        alive = [n for n in self.nodes if n.alive]
+        zlo, zhi = self.relay_zone
+        eligible = [n for n in alive if zlo <= n.y <= zhi]
+        pool = eligible if eligible else alive
+        # highest residual energy first
+        chosen = sorted(pool, key=lambda n: n.energy, reverse=True)[:self.relay_count]
+        self.relay_positions = [(n.x, n.y) for n in chosen]
+        # fresh 0.5J budget for the rotated-in relays
+        if self.relay_energy_budget is not None:
+            self.relay_energy = [self.relay_energy_budget for _ in chosen]
+
+    def step(self):
+        # rotate relays at epoch boundaries
+        if self.rotate_every is not None:
+            epoch = (self.round + 1) // self.rotate_every
+            if epoch != self._relay_epoch and self.alive_count > 0:
+                self._relay_epoch = epoch
+                self._select_relays()
+        out = super().step()
+        if self.round > 341:
+            self.pdr_after_341.append(out.get('pdr', 0.0) if isinstance(out, dict) else 0.0)
+        return out
