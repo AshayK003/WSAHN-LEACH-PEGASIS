@@ -50,6 +50,17 @@ Network lifetime, delivery and delay averaged over **20 seeded runs**
 | **ClusterChain-H (K=1)** | **3113** | **0.96** | 73.9 | **1.33x** |
 | **ClusterChain-H (K=2)** | **3031** | **0.98** | 37.2 | **1.30x** |
 | **ClusterChain-H (K=3)** | **2945** | **0.98** | 24.7 | **1.26x** |
+| **ClusterChain-H + rotating relay-sink** | **4554** | **1.00** | 73.5 | **1.99x** |
+
+**Rotating relay-sink tier.** Adding a relay-collection tier (relays rotated
+among highest-residual nodes) lifts lifetime to 4554 rounds with **PDR 1.00**
+— **1.50x the ClusterChain-H K=1 baseline** and **~2.0x PEGASIS** under the
+same 20-seed benchmark (Section 12). Unlike the fixed-relay variant (which
+collapses PDR to 0.19 when the relay dies at round 341), rotation spreads the
+relay→base-station cost across nodes so no single relay fails. This is reported
+as a separate ablation experiment, not folded into the K=1/K=3 design space.
+
+
 
 **Honest summary.** ClusterChain-H does not invent extra battery to win: every
 protocol above runs on the *identical* 0.55 J/node heterogeneous budget, and the

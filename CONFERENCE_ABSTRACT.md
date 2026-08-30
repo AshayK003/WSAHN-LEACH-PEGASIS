@@ -46,8 +46,12 @@ legitimate heterogeneity-aware election. Learned routing (HDQN, DRL-GNN) is repo
 in the survey literature to reach longer lifetimes (~4000+ rounds in their own
 simulators) but needs a training loop unsuitable for the constrained nodes this
 protocol targets, and is left as explicit future work — it has not been reproduced in
-our model and is not a comparison claim. All code, evaluation harness, and
-reproducibility artifacts are open.
+our model and is not a comparison claim. Ablation study (Section 12) shows two
+popular next-step mechanisms (energy-gradient relay, selective dual-terminus)
+do not beat the baseline, while a rotating relay-sink tier reaches **~2.0x
+PEGASIS** (1.50x the ClusterChain-H K=1 baseline) with PDR 1.00 under the same
+20-seed benchmark. All code, evaluation harness, and reproducibility artifacts
+are open.
 
 **Keywords:** wireless sensor networks, LEACH, PEGASIS, clustering, chain routing,
 heterogeneity, energy efficiency, network lifetime.
