@@ -1,6 +1,7 @@
 """Final evaluation: ClusterChain-H vs baselines, with homogeneous ablation and
 scalability. Produces eval_full.json, lifetime.png, scalability.png."""
 import json
+import random
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
@@ -14,12 +15,13 @@ from clusterchain_h import ClusterChainH
 from recent_variants import DualHead, PSOCH
 
 M, A = 0.1, 2.0
-MAX_ROUNDS = 4000
+MAX_ROUNDS = 6000
 
 
 def run(cls, n_nodes, seeds, **kw):
     out = []
     for s in seeds:
+        random.seed(s)
         np.random.seed(s)
         out.append(cls(n_nodes=n_nodes, **kw).run(MAX_ROUNDS))
     return out

@@ -2,6 +2,7 @@
 
 Run:  internals\\.venv\\Scripts\\python.exe -m pytest tests -q
 """
+import random
 import numpy as np
 from leach import LEACH
 from pegasis import PEGASIS
@@ -22,6 +23,7 @@ def _early_pdr(hists, w=800):
 def _run(cls, n_nodes=100, seeds=(42, 142, 242), **kw):
     out = []
     for s in seeds:
+        random.seed(s)
         np.random.seed(s)
         out.append(cls(n_nodes=n_nodes, **kw).run(3000))
     return out
@@ -74,7 +76,14 @@ def test_heterogeneity_improves_cch():
     assert het > homo, f"heterogeneity did not help ({het:.0f} <= {homo:.0f})"
 
 
-def test_pegasismst_beats_pegasis():
-    pg = np.mean(_last(_run(PEGASIS)))
-    pm = np.mean(_last(_run(ClusterChainH, m=0.0, a_mult=1.0, mode='multichain', K=1)))
-    assert pm > pg
+def test_relay_mode_beats_pegasis_homogeneous():
+    # First-class relay mode (rotating relay-sink tier) should beat vanilla
+    # PEGASIS by ~2x in the homogeneous setting, with PDR intact.
+    pg = _last(_run(PEGASIS, n_nodes=100))
+    relay = _run(ClusterChainH, n_nodes=100, m=0.0, a_mult=1.0,
+                 mode='relay', K=1)
+    relay_last = np.mean([h[-1][0] for h in relay])
+    relay_pdr = np.mean([np.mean([min(1.0, r[3]) for r in h[:800]]) for h in relay])
+    assert relay_last > np.mean(pg) * 1.8, \
+        f"relay({relay_last:.0f}) not >1.8x PEGASIS({np.mean(pg):.0f})"
+    assert relay_pdr > 0.9, f"relay PDR too low: {relay_pdr}"

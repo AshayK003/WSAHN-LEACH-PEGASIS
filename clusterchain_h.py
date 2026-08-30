@@ -14,6 +14,11 @@ PEGASIS:
      one sink hop); higher K adds parallel chains that strictly lower delay.
      The `adaptive` mode stays at K=1 for the whole run (it tracks the measured
      best lifetime config), while `multichain` lets K be set explicitly.
+  5. A first-class `relay` mode: a rotating relay-sink tier where each chain's
+     terminus forwards to the nearest of R rotating relays instead of the far
+     off-field base station. The relay→BS forward hop is infrastructure and is
+     tracked separately, never folded into sensor energy. Distinct from `multichain`
+     only in the final sink hop; chain construction is identical.
 
 All protocols import the same energy.py, so comparisons are like-for-like.
 PDR is defined uniformly as packets delivered to the sink / packets generated
@@ -254,9 +259,14 @@ class ClusterChainH:
         a_mult: float = 2.0,       # advanced initial-energy multiplier
         K: int = 5,                # chain-head count (clustered) / chain count (multichain)
         w_energy: float = 0.7,     # weight on (residual*type) vs sink proximity in election
-        mode: str = 'clustered',   # 'clustered' | 'multichain' | 'adaptive'
+        mode: str = 'clustered',   # 'clustered' | 'multichain' | 'adaptive' | 'relay'
         rotate: bool = True,       # rotate terminus by energy+proximity
         adaptive_k: bool = True,   # recompute K from energy model as nodes die (clustered)
+        # --- relay mode params (ignored unless mode='relay') ---
+        relay_count: int = 2,      # number of rotating relay collection points
+        rotate_every: int = 50,    # re-select relays every N rounds (None = static)
+        relay_energy: Optional[float] = 0.5,  # per-relay budget (None = unlimited infra)
+        relay_zone: Optional[tuple] = None,  # (y_lo, y_hi) band for relay eligibility
     ):
         self.n = n_nodes
         self.field_x = field_x
@@ -274,6 +284,18 @@ class ClusterChainH:
         self.round = 0
         self.alive_count = n_nodes
         self.history = []
+
+        # relay-mode state (only used when mode='relay')
+        self.relay_count = relay_count
+        self.rotate_every = rotate_every
+        self.relay_energy_budget = relay_energy
+        self.relay_zone = relay_zone or (field_y * 0.3, field_y * 0.7)
+        self.relay_positions = [(field_x / 2.0, field_y / 2.0)] * relay_count
+        self.relay_energy = ([relay_energy] * relay_count
+                             if relay_energy is not None else None)
+        self.relay_forward_total = 0.0
+        self.relay_dead_round = None
+        self._relay_epoch = -1
 
         self.nodes = []
         n_adv = int(round(m * n_nodes))
@@ -468,6 +490,102 @@ class ClusterChainH:
                     delays.append(max(1, len(ordered)))
         return self._pack(sent, delivered, total_tx, total_rx, delays)
 
+    def _nearest_relay(self, x, y):
+        best_i, best_d = 0, float('inf')
+        for i, (rx, ry) in enumerate(self.relay_positions):
+            d = ((x - rx) ** 2 + (y - ry) ** 2) ** 0.5
+            if d < best_d:
+                best_d, best_i = d, i
+        return best_i, best_d
+
+    def _select_relays(self):
+        """Re-select the highest-residual-energy alive nodes in the relay zone
+        as the current relays (rotation epoch). Each rotated-in relay gets a
+        fresh budget so no single node becomes a permanent bottleneck."""
+        alive = [n for n in self.nodes if n.alive]
+        zlo, zhi = self.relay_zone
+        eligible = [n for n in alive if zlo <= n.y <= zhi]
+        pool = eligible if eligible else alive
+        chosen = sorted(pool, key=lambda n: n.energy, reverse=True)[:self.relay_count]
+        self.relay_positions = [(n.x, n.y) for n in chosen]
+        if self.relay_energy_budget is not None:
+            self.relay_energy = [self.relay_energy_budget for _ in chosen]
+
+    def _transmit_relay_multichain(self, chains):
+        alive = [n for n in self.nodes if n.alive]
+        by_id = {n.id: n for n in alive}
+        sent = len(alive)
+        delivered = {n.id for n in alive}
+        total_tx = 0.0
+        total_rx = 0.0
+        delays = []
+
+        for chain in chains:
+            broken = False
+            ordered = [c for c in chain if c.chain_next is not None or c.is_terminus]
+            for c in ordered:
+                if c.chain_next is None:  # terminus of this chain
+                    continue
+                nxt = by_id.get(c.chain_next)
+                if nxt is None or not nxt.alive:
+                    broken = True
+                    delivered.discard(c.id)
+                    continue
+                d = c.distance_to(nxt)
+                if not in_range(d):
+                    c.consume(tx_energy(d))
+                    delivered.discard(c.id)
+                    broken = True
+                    continue
+                if c.consume(tx_energy(d)):
+                    broken = True
+                    delivered.discard(c.id)
+                    continue
+                if nxt.consume(rx_energy() + da_energy()):
+                    broken = True
+                    delivered.discard(c.id)
+                    delivered.discard(nxt.id)
+                    continue
+                total_tx += tx_energy(d)
+                total_rx += rx_energy() + da_energy()
+            terminus = next((c for c in ordered if c.is_terminus), None)
+            if terminus is None:
+                continue
+            if broken:
+                delivered.discard(terminus.id)
+                continue
+
+            # sensor-side hop: terminus -> nearest relay (charged to sensor,
+            # exactly like the baseline's terminus -> sink hop)
+            ridx, d_relay = self._nearest_relay(terminus.x, terminus.y)
+            if terminus.consume(tx_energy(d_relay)):
+                for node in ordered:
+                    delivered.discard(node.id)
+                continue
+            total_tx += tx_energy(d_relay)
+
+            # relay -> BS forward is infrastructure, tracked separately, never
+            # folded into sensor energy
+            rx, ry = self.relay_positions[ridx]
+            d_bs = ((rx - self.sink.x) ** 2 + (ry - self.sink.y) ** 2) ** 0.5
+            e_bs = tx_energy(d_bs)
+            if self.relay_energy is not None:
+                if self.relay_energy[ridx] >= e_bs:
+                    self.relay_energy[ridx] -= e_bs
+                    self.relay_forward_total += e_bs
+                else:
+                    if self.relay_dead_round is None:
+                        self.relay_dead_round = self.round
+                    for node in ordered:
+                        delivered.discard(node.id)
+                    continue
+            else:
+                self.relay_forward_total += e_bs
+
+            delays.append(max(1, len(ordered)) + 1)
+
+        return self._pack(sent, delivered, total_tx, total_rx, delays)
+
     def _pack(self, sent, delivered, total_tx, total_rx, delays):
         return {
             'sent': sent,
@@ -505,11 +623,14 @@ class ClusterChainH:
             heads = [n for n in self.nodes if n.alive and n.is_ch]
             build_refined_chain(heads, self.sink, rotate=self.rotate)
             m = self._transmit_clustered(heads)
-        else:  # multichain
+        else:  # multichain or relay (relay uses same chain build, different sink hop)
             k = max(1, min(k, self.alive_count))
-            # Partition is recomputed each round (cheap); the expensive 2-opt
-            # refinement is cached and only re-run when a chain's membership
-            # changes (i.e. a node died). The terminus still rotates every round.
+            # relay mode: rotate the relay set at epoch boundaries
+            if mode == 'relay' and self.rotate_every is not None:
+                epoch = (self.round + 1) // self.rotate_every
+                if epoch != self._relay_epoch and self.alive_count > 0:
+                    self._relay_epoch = epoch
+                    self._select_relays()
             raw_chains = partition_into_chains(alive, k)
             chains = []
             for ch in raw_chains:
@@ -523,7 +644,8 @@ class ClusterChainH:
                                                 rotate=self.rotate, refine=True)
                     self._chain_store[sig] = built
                     chains.append(built)
-            m = self._transmit_multichain(chains)
+            m = (self._transmit_relay_multichain(chains) if mode == 'relay'
+                 else self._transmit_multichain(chains))
 
         self.alive_count = sum(1 for n in self.nodes if n.alive)
         pdr = m['received'] / max(1, m['sent'])

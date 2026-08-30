@@ -18,6 +18,7 @@ ClusterChainH) are deployed on a heterogeneous field and compared against the
 homogeneous baselines (LEACH, PEGASIS) which ignore heterogeneity.
 """
 import json
+import random
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
@@ -38,6 +39,7 @@ MAX_ROUNDS = 4000
 def run_protocol(cls, n_nodes, **kw):
     hists = []
     for s in SEEDS:
+        random.seed(s)
         np.random.seed(s)
         hists.append(cls(n_nodes=n_nodes, **kw).run(MAX_ROUNDS))
     return hists

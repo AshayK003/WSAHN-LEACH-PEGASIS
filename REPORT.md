@@ -202,10 +202,17 @@ the low-delay option (25 hops vs PEGASIS's 77) for time-sensitive sensing.
 ### 9.2 Homogeneous ablation (N=100, 20 seeds) — geometry + rotation only
 
 With no advanced nodes (0.5 J/node, every protocol equal), ClusterChain-H (K=1)
-beats homogeneous PEGASIS by **1.45×** (1741 ± 39 vs 1200 rounds), confirming the
+beats homogeneous PEGASIS by **1.45×** (1742 ± 19 vs 1200 rounds), confirming the
 MST geometry + rotating terminus are independently effective. The full heterogeneous
 gain (1.33× over heterogeneity-aware PEGASIS) is this structural contribution plus the
 legitimate heterogeneity-aware election — not extra battery.
+
+The same structural contribution compounds under the first-class `relay` mode
+(rotating relay-sink tier): ClusterChain-H reaches **~2.0× homogeneous PEGASIS**
+(2417 rounds) with neutral PDR, because each chain's terminus forwards to the nearest
+of R rotating relays instead of the far off-field base station — and no single relay
+becomes a permanent bottleneck. The relay→BS forward hop is tracked as infrastructure
+cost and never folded into sensor energy.
 
 ### 9.3 Scalability (N=200, 8 seeds, means)
 

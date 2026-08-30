@@ -76,10 +76,16 @@ winner**: K=1/2/3 lifetimes (3038/2931/2819) are within each other's 95% CI, and
 higher K strictly lowers delay.
 
 A **homogeneous ablation** (no advanced nodes; geometry + rotating terminus only)
-gives ClusterChain-H **1.45x** the lifetime of homogeneous PEGASIS (1741 vs 1200
-rounds), confirming the structural mechanisms are independently effective; the full
-heterogeneous gain combines that structural contribution with heterogeneity-aware
+gives ClusterChain-H **1.45x** the lifetime of homogeneous PEGASIS (1742 ± 19 vs
+1200 rounds), confirming the structural mechanisms are independently effective; the
+full heterogeneous gain combines that structural contribution with heterogeneity-aware
 election.
+
+A first-class **`relay` mode** (rotating relay-sink tier: each chain's terminus
+forwards to the nearest of R rotating relays instead of the far off-field base
+station) lifts lifetime to **~2.0x homogeneous PEGASIS** under the same benchmark
+(neutral PDR, no single-relay bottleneck). The relay->BS forward hop is tracked as
+infrastructure cost and never folded into sensor energy.
 
 ## Reproducibility
 
