@@ -64,8 +64,11 @@ def metrics(hists):
         lasts.append(last)
         fnds.append(fnd)
         hnds.append(hnd)
-        pdrs.append(h[-1][3])
-        delays.append(h[-1][4])
+        # PDR / delay are meaningful only while the network is alive; the final
+        # round has alive=0 and records ~0, so average over alive rounds.
+        alive = [r for r in h if r[1] > 0]
+        pdrs.append(np.mean([r[3] for r in alive]) if alive else 0.0)
+        delays.append(np.mean([r[4] for r in alive]) if alive else 0.0)
     energy = np.mean([np.sum([r[2] for r in h]) for h in hists])
     return {
         'LAST': np.mean(lasts), 'FND': np.mean(fnds), 'HND': np.mean(hnds),
