@@ -168,6 +168,19 @@ communication-range requirement and is exercised in Scenario 2.
 | Max rounds | 6000 (full lifetime to last-node-death; both RNGs seeded per seed) |
 | Metrics | Throughput, PDR, E2E delay, energy, lifetime, loss |
 
+**Simulation tooling.** The evaluation uses a custom Python simulator built
+specifically for this study rather than a general-purpose network simulator
+(NS-3, Contiki-NG/Cooja, OMNeT++). Rationale: all protocols here share the
+same first-order radio energy model (Heinzelman et al. 2000), and a purpose-built
+simulator gives exact control over that energy model, deterministic seeded
+reproducibility (both the `random` and `numpy` RNGs are seeded per run), and a
+common per-round history interface across every protocol — which a
+general-purpose simulator would obscure behind its own stack. The first-order
+model is the standard teaching/reference model for WSN lifetime studies and is
+sufficient to compare routing-protocol energy trade-offs; it abstracts real
+radio effects (shadowing, collision, retransmission), so absolute round counts
+are relative comparisons, not field predictions.
+
 ---
 
 ## 6. Performance Metrics
@@ -186,7 +199,7 @@ communication-range requirement and is exercised in Scenario 2.
 ## 7. Simulation Scenarios
 
 - **Scenario 1 — Baseline (N=100, 20 seeds):** LEACH, PEGASIS, SEP, DEEC,
-  PEGASIS-MST, ClusterChain-H (multichain K=3).
+  H-PEGASIS, ClusterChain-H (multichain K=3).
 - **Scenario 2 — Communication-range sensitivity (N=100, 15 seeds):** unlimited vs
   `R = 35 m`, demonstrating range-induced packet loss.
 - **Scenario 3 — Scalability (N=200, 8 seeds):** confirms trends hold at larger N.
