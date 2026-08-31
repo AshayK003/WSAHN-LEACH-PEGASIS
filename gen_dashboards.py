@@ -33,7 +33,7 @@ M, A, N, MAXR, SEEDS = 0.1, 2.0, 100, 6000, [1000 + i * 7 for i in range(20)]
 
 PROTOCOLS = {
     'LEACH': (LEACH, {}),
-    'PEGASIS': (PEGASIS, {}),
+    'PEGASIS': (PEGASIS, dict(m=M, a_mult=A)),
     'SEP': (SEP, dict(m=M, a_mult=A)),
     'DEEC': (DEEC, dict(m=M, a_mult=A)),
     'DCK-LEACH': (DualHead, dict(m=M, a_mult=A, K=5)),
@@ -64,11 +64,12 @@ def metrics(hists):
         lasts.append(last)
         fnds.append(fnd)
         hnds.append(hnd)
-        # PDR / delay are meaningful only while the network is alive; the final
-        # round has alive=0 and records ~0, so average over alive rounds.
-        alive = [r for r in h if r[1] > 0]
-        pdrs.append(np.mean([r[3] for r in alive]) if alive else 0.0)
-        delays.append(np.mean([r[4] for r in alive]) if alive else 0.0)
+        # PDR / delay use the SAME definition as canonical_eval.py (mean over the
+        # first 1500 rounds, PDR capped at 1.0) so the figures match the paper
+        # table and eval_canonical.json exactly.
+        cap = min(len(h), 1500)
+        pdrs.append(np.mean([min(1.0, h[r][3]) for r in range(cap)]))
+        delays.append(np.mean([h[r][4] for r in range(cap)]))
     energy = np.mean([np.sum([r[2] for r in h]) for h in hists])
     return {
         'LAST': np.mean(lasts), 'FND': np.mean(fnds), 'HND': np.mean(hnds),
