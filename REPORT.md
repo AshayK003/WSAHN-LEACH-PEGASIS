@@ -217,7 +217,7 @@ NPSOP) are re-implemented in this same simulator — not cited from their papers
 
 | Protocol | Lifetime (rnd) | 95% CI | PDR | Delay (hops) | vs PEGASIS |
 |----------|---------------:|------:|----:|-------------:|-----------:|
-| LEACH | 916 | ±8 | 0.98 | 1.0 | 0.39× |
+| LEACH | 912 | ±8 | 0.98 | 1.0 | 0.39× |
 | PEGASIS | 2291 | ±41 | 0.99 | 77.2 | 1.00× |
 | DEEC | 1203 | ±28 | 0.99 | 1.0 | 0.52× |
 | SEP | 1358 | ±46 | 0.99 | 1.0 | 0.59× |
@@ -523,7 +523,7 @@ infrastructure accounting. Scripts and raw JSON results: `cch_experimental.py`,
 - `dashboard_gen.py` — focused LEACH/PEGASIS/ClusterChain-H dashboard + death
   timeline.
 - `scenarios.py` — communication-range sensitivity + energy-consumption plots.
-- `eval_n100.py`, `eval_scale.py` — 20-seed / 8-seed evaluation harnesses.
+- `canonical_eval.py` — authoritative 20-seed N=100 benchmark (includes H-PEGASIS); `eval.py` — coupled-seed homogeneous + heterogeneous evaluation. (Legacy: `eval_n100.py`, `eval_scale.py`.)
 - `cch_experimental.py` — ablation protocol (energy-gradient relay, adaptive-K,
   selective dual-terminus fail-over).
 - `cch_relaysink.py` — static and rotating relay-sink tier variants.

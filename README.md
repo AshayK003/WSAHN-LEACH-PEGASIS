@@ -41,7 +41,7 @@ Network lifetime, delivery and delay averaged over **20 seeded runs**
 
 | Protocol | Last node dead | PDR | Delay (hops) | vs PEGASIS |
 |----------|--------------:|----:|------------:|-----------:|
-| LEACH (het) | 916 | 0.98 | 1.0 | 0.39x |
+| LEACH (het) | 912 | 0.98 | 1.0 | 0.39x |
 | PEGASIS (het) | 2291 | 0.99 | 77.2 | 1.00x |
 | SEP | 1358 | 0.99 | 1.0 | 0.59x |
 | DEEC | 1203 | 0.99 | 1.0 | 0.52x |
@@ -87,23 +87,6 @@ station) lifts lifetime to **~2.0x homogeneous PEGASIS** under the same benchmar
 (neutral PDR, no single-relay bottleneck). The relay->BS forward hop is tracked as
 infrastructure cost and never folded into sensor energy.
 
-## Reproducibility
-
-```bash
-pip install -r requirements.txt
-
-# 3-protocol comparison (legacy ClusterChain harness, 3 runs, 2000 rounds)
-python run.py --nodes 100 --rounds 2000 --runs 3
-
-# Full ClusterChain-H evaluation vs LEACH/PEGASIS/SEP/DEEC (20 seeds, N=100/200/500)
-python eval_full.py        # writes eval_full.json, lifetime.png, scalability.png
-
-# 20-seed N=100 focused numbers used in the abstract
-python eval_n100.py
-```
-
-All results are seeded and deterministic per seed.
-
 ## Project Structure
 
 ```
@@ -112,16 +95,25 @@ All results are seeded and deterministic per seed.
 ├── leach.py             # LEACH (heterogeneity-aware: m, a_mult)
 ├── pegasis.py           # PEGASIS (heterogeneity-aware: m, a_mult)
 ├── sep.py / deec.py     # Heterogeneous cluster baselines
+├── recent_variants.py   # DualHead (DCK-LEACH), PSOCH (NPSOP) recent baselines
+├── hpegasis.py          # H-PEGASIS: MST chain + rotating leader (chaining baseline)
 ├── clusterchain.py      # Original ClusterChain (legacy hybrid, documented in history)
 ├── clusterchain_h.py    # ClusterChain-H: MST chain + rotating terminus + heterogeneity
-├── run.py               # Experiment runner + legacy 3-way comparison + dashboard
-├── eval_full.py         # Full evaluation vs all baselines (N=100/200/500, multi-seed)
-├── eval_n100.py         # Focused 20-seed N=100 results
-├── sweep.py / sweep2.py # Parameter sweeps
+├── cch_relaysink.py     # Relay-sink ablation (SUPERSEDED by mode='relay', retained as evidence)
+├── cch_experimental.py  # Ablation harness (energy-gradient, dual-terminus, static relay)
+├── canonical_eval.py    # AUTHORITATIVE N=100 benchmark (20 seeds, H-PEGASIS included)
+├── eval.py              # Homogeneous + heterogeneous coupled-seed eval -> eval_results.json
+├── eval_full.py         # N=100/200/500 sweep (N=500 slow; see note below)
+├── eval_consistency.py / eval_dualterminus.py / eval_experimental.py
+├── eval_relayrotation.py / eval_relaysink.py / eval_relayscale.py
+├── gen_dashboards.py    # Regenerates comparison/dashboard/dashboard3/death_timeline PNGs
+├── gen_scalability_fig.py # scalability.png (verified numbers, no re-sim)
+├── scenarios.py         # Communication-range sensitivity + energy-consumption plots
+├── dashboard_gen.py     # Legacy LEACH/PEGASIS/CCH dashboard + death timeline
+├── animate.py           # Topology GIF generator (per-protocol node/energy/chain animation)
 ├── derivation.md        # Math: energy-optimal k* and the delay/lifetime tradeoff
 ├── derive_kstar.py      # Closed-form optimal chain length k* derivation
-├── scenarios.py         # Communication-range sensitivity + energy-consumption plots
-├── dashboard_gen.py     # LEACH/PEGASIS/ClusterChain-H dashboard + death timeline
+├── tests/test_protocols.py
 ├── REPORT.md            # Full mini-project report (problem, related work, results)
 └── CONFERENCE_ABSTRACT.md
 ```
@@ -153,7 +145,9 @@ Every result in this repo is reproducible from a fixed seed set with **both** RN
 | `python canonical_eval.py` | `eval_canonical.json` + console table | Authoritative N=100 benchmark (20 seeds). Includes H-PEGASIS. Fast (<2 min). |
 | `python eval.py` | `eval_results.json` + `lifetime.png` | N=100/200/500 homogeneous + heterogeneous, coupled-seed. |
 | `python eval_full.py` | `eval_full.json`, `lifetime.png` | Full heterogeneous sweep. **N=500 pass is slow** — PEGASIS's per-round O(N^2) chain rebuild exceeds a few-minute budget in constrained runners; N=100/N=200 complete normally. |
+| `python gen_dashboards.py` | `comparison.png`, `dashboard.png`, `dashboard3.png`, `death_timeline.png` | Regenerates the four dashboard figures from current coupled-seed data. |
 | `python gen_scalability_fig.py` | `scalability.png` | Plots the N=100/200/500 scalability trend from the coupled-seed numbers above (no re-simulation). Use this for the figure. |
+| `python scenarios.py` | `range_impact.png`, `energy_consumption.png` | Communication-range sensitivity + cumulative energy plots. |
 | `python -m pytest tests` | — | 7 tests: all protocols run, lifetimes match, relay mode beats PEGASIS. |
 
 **Verification:** after running `canonical_eval.py` you should see
