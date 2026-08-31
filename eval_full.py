@@ -1,5 +1,16 @@
 """Final evaluation: ClusterChain-H vs baselines, with homogeneous ablation and
-scalability. Produces eval_full.json, lifetime.png, scalability.png."""
+scalability. Produces eval_full.json, lifetime.png, scalability.png.
+
+NOTE ON N=500 RUNTIME: PEGASIS rebuilds its greedy chain every round with an
+unseeded O(N^2) Python loop (no membership cache, unlike ClusterChain-H's
+`_chain_store`). At N=500 x 8 seeds x 6000 rounds this exceeds a few-minute
+wall-clock budget and the run will not finish in constrained environments. The
+N=100/N=200 passes complete normally. The N=500 scalability figure
+(scalability.png) is therefore generated separately by gen_scalability_fig.py
+from the coupled-seed numbers in eval_canonical.json / eval_results.json; it is
+not produced by this script's N=500 pass. H-PEGASIS is intentionally excluded
+from this sweep for the same reason (it inherits PEGASIS's per-round rebuild).
+"""
 import json
 import random
 import numpy as np

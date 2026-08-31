@@ -70,7 +70,7 @@ lifetime with PDR of 0.96–0.98 (marginally below the baselines' ~0.99 — the 
 cost of the single-chain topology, where a terminus death on the sink hop clears the
 whole round, counted consistently across all protocols) and a tunable delay
 (K=3: 25 hops vs PEGASIS 77). Against the 2022–2023 CH-optimisation literature it
-reaches **2.7x DCK-LEACH** and **1.4x NPSOP** — both re-implemented in this same
+reaches **2.7x DCK-LEACH** and **1.5x NPSOP** — both re-implemented in this same
 simulator, not cited from their papers. **K is a delay/lifetime knob, not a hidden
 winner**: K=1/2/3 lifetimes (3038/2931/2819) are within each other's 95% CI, and
 higher K strictly lowers delay.
@@ -135,6 +135,30 @@ All results are seeded and deterministic per seed.
 - **Energy Model**: First-order radio (Heinzelman et al., 2000)
 - **Seeds**: 20 (N=100), deterministic
 - **Metrics**: Lifetime (FND/HND/last), PDR, E2E delay (hops), Energy x Delay
+
+## Reproducibility
+
+Every result in this repo is reproducible from a fixed seed set with **both** RNGs
+(`random` and `numpy`) seeded per run — there is no Monte-Carlo noise between runs.
+
+**Environment**
+- Python 3.11+ (developed on CPython 3.11.15)
+- Pure-Python dependencies only: `numpy`, `matplotlib` (no compiled extensions)
+- Install: `pip install numpy matplotlib`
+
+**Run order (each script is self-contained and prints its own table)**
+
+| Script | Produces | Notes |
+|--------|----------|-------|
+| `python canonical_eval.py` | `eval_canonical.json` + console table | Authoritative N=100 benchmark (20 seeds). Includes H-PEGASIS. Fast (<2 min). |
+| `python eval.py` | `eval_results.json` + `lifetime.png` | N=100/200/500 homogeneous + heterogeneous, coupled-seed. |
+| `python eval_full.py` | `eval_full.json`, `lifetime.png` | Full heterogeneous sweep. **N=500 pass is slow** — PEGASIS's per-round O(N^2) chain rebuild exceeds a few-minute budget in constrained runners; N=100/N=200 complete normally. |
+| `python gen_scalability_fig.py` | `scalability.png` | Plots the N=100/200/500 scalability trend from the coupled-seed numbers above (no re-simulation). Use this for the figure. |
+| `python -m pytest tests` | — | 7 tests: all protocols run, lifetimes match, relay mode beats PEGASIS. |
+
+**Verification:** after running `canonical_eval.py` you should see
+`CCH-K1 = 3038 ± 127`, `PEGASIS = 2291 ± 41`, `H-PEGASIS = 3084 ± 120`
+(rounds, 20 seeds). Any deviation means the seed set or RNG seeding was altered.
 
 ## References
 
