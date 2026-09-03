@@ -2,7 +2,7 @@
 
 Baselines (like-for-like, same energy.py):
   LEACH        - randomized CH rotation, single-hop CH->sink (homogeneous)
-  PEGASIS      - greedy NN chain, fixed-ish leader (homogeneous)
+   PEGASIS      - greedy NN chain, round-robin leader (homogeneous)
    SEP / DEEC   - heterogeneity-aware clustering (single-hop CH->sink)
    PEGASIS-MST  - our geometry+rotation fair variant (homogeneous) for ablation
    ClusterChainH- the proposed protocol (clustered / multichain / adaptive)

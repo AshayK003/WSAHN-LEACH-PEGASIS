@@ -6,13 +6,15 @@ Cluster-based (LEACH) and chain-based (PEGASIS) routing remain the two canonical
 data-gathering strategies for wireless sensor networks, but each carries a structural
 weakness: LEACH elects cluster heads at random and wastes energy on distant or
 multipath relay hops, while PEGASIS forms a single chain that forces every
-node to relay, yielding ~77-hop end-to-end delay and a permanent leader hotspot.
+node to relay, yielding ~77-hop end-to-end delay and round-robin leadership
+that still assigns the costly multipath sink hop to far or energy-poor nodes.
 
 We propose **ClusterChain-H**, a synthesis that addresses both weaknesses through
 four mechanisms:
 
 1. **Near-optimal chain geometry** — a Prim's MST-based chain construction
-   (theoretically near the per-round energy floor of Kalpakis et al.) replaces greedy
+   (minimum-total-length aggregation in the MLDA spirit of Kalpakis et al.;
+   MST-traversal chains after Meghanathan) replaces greedy
    nearest-neighbour chaining, eliminating long links.
 2. **Energy + sink-proximity rotating terminus** — the sink hop is performed by the
    node maximising residual energy and proximity to the base station, rotated every
@@ -29,7 +31,7 @@ energy, 20 seeded runs): lifetime is normalised by per-node energy budget so gai
 are not an artefact of extra battery. In this fair comparison the best ClusterChain-H
 configuration (K=1, 3038 ± 127 rounds) achieves **1.33x the lifetime of
 heterogeneity-aware PEGASIS (2291 ± 41)**, **1.99x SEP (1528 ± 86)** and
-**2.50x DEEC (1213 ± 30)**, with **PDR = 0.96** (PEGASIS 0.99; the small gap is a
+**2.57x DEEC (1184 ± 21)**, with **PDR = 0.96** (PEGASIS 0.99; the small gap is a
 single-chain terminus death clearing the round, an accepted cost of the long
 lifetime) and end-to-end delay of **25-75 hops versus PEGASIS's 77**. K is a
 delay/lifetime knob, not a hidden winner: K=1-3 are within each other's 95% CI on
@@ -41,7 +43,7 @@ ClusterChain-H matches this geometry gain while adding the heterogeneity-aware e
 which does not extend raw lifetime further (the rotating terminus already load-balances)
 but guarantees fairness — normal nodes survive 2.56x longer than advanced nodes (Section
 9.2) — at zero lifetime cost, and still beats the heterogeneity-only baselines SEP/DEEC
-by 2.0-2.5x.
+by 2.0-2.6x.
 To test against the recent literature we re-implemented two 2022-2023 CH-optimisation
 schemes (DCK-LEACH dual cluster-head, NPSOP PSO cluster-head selection) inside the
 same model: both remain clustering protocols whose heads pay a direct multipath sink

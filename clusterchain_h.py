@@ -8,8 +8,10 @@ PEGASIS:
      relay heads (generalises SEP/DEEC into a clustering+chaining hybrid).
   2. MST/2-opt-refined chain construction that removes the long links of greedy
      nearest-neighbour PEGASIS (geometry lever).
-  3. Energy + sink-proximity rotating chain terminus / leaders across parallel
-     chains (hotspot-removal lever; H-PEGASIS / PDCH style).
+   3. Energy + sink-proximity rotating chain terminus / leaders across parallel
+      chains (replaces PEGASIS's blind round-robin leadership with energy-aware
+      leadership: the costly sink hop always lands on a high-energy near-sink
+      node).
   4. A tunable chain count K: K=1 keeps a single refined chain (lifetime-optimal,
      one sink hop); higher K adds parallel chains that strictly lower delay.
      The `adaptive` mode stays at K=1 for the whole run (it tracks the measured
@@ -72,8 +74,10 @@ def two_opt_path(nodes):
 def mst_chain(pool):
     """Build a low-cost chain over `pool` via Prim's minimum spanning tree (squared
     distance weights) followed by a tree traversal. The MST minimises the total
-    squared-link cost, which is the theoretical per-round energy floor (Kalpakis et
-    al.); the traversal yields a single connected ordering suitable for chain relay.
+    squared-link cost of the aggregation structure, in the spirit of MLDA-style
+    aggregation (Kalpakis et al., Computer Networks 2003); MST-traversal chains
+    for PEGASIS were shown effective by Meghanathan (KSII TIIS 2009). The
+    traversal yields a single connected ordering suitable for chain relay.
     O(|pool|^2) single pass -- much cheaper than iterated 2-opt and near-optimal.
     """
     import heapq

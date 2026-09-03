@@ -5,7 +5,7 @@ with a PEGASIS-style greedy chain. The cluster-head set is chosen by residual
 energy and proximity, and only the cluster heads (or, in dense mode, all nodes)
 form the relay chain to the sink. The chain terminus that performs the single
 expensive sink hop rotates by residual energy and proximity, avoiding PEGASIS's
-permanent leader hotspot and keeping end-to-end delay low.
+blind round-robin leadership and keeping end-to-end delay low.
 """
 import argparse
 import json

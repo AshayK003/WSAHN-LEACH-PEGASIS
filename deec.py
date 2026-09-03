@@ -1,4 +1,4 @@
-"""DEEC Protocol Implementation (Qing et al. 2006)"""
+"""DEEC Protocol Implementation (Li et al. 2006, Computer Communications)"""
 import random
 import math
 import numpy as np
@@ -74,19 +74,23 @@ class DEEC:
 
     def _select_cluster_heads(self):
         e_avg = self._avg_energy()
-        # Standard DEEC (Qing et al. 2006): election probability scales with
-        # residual/average energy; advanced nodes carry the (1 + a*m) total-
-        # energy factor where a = a_mult - 1 is the EXTRA energy factor.
+        # Exact two-level DEEC (Li et al. 2006): pi = popt * N(1+ai)/[N(1+am)]
+        #   x Ei(r)/Eavg(r), i.e. normal nodes elect with popt/(1+a*m) and
+        #   advanced nodes with popt*(1+a)/(1+a*m), each scaled by residual
+        #   over average energy; a = a_mult - 1 is the EXTRA energy factor.
+        # (Eavg here is the instantaneous mean — the standard simplification
+        # of the paper's estimated lifetime-average reference energy.)
         a = self.a_mult - 1.0
+        denom = 1 + a * self.m
         for node in self.nodes:
             node.is_ch = False
             if not node.alive:
                 continue
             ratio = node.energy / e_avg
             if node.is_advanced:
-                p_i = self.p * ratio * (1 + a * self.m)
+                p_i = self.p * (1 + a) / denom * ratio
             else:
-                p_i = self.p * ratio
+                p_i = self.p / denom * ratio
             p_i = min(p_i, 1.0)
             if random.random() < p_i:
                 node.is_ch = True

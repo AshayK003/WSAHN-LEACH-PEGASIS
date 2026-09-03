@@ -16,21 +16,23 @@ strictly like-for-like:
   every round (Heinzelman et al., 2000).
 - **PEGASIS** (Power-Efficient Gathering in Sensor Information Systems) — a
   greedy chain over all nodes. Energy is balanced well, but every node relays
-  every round (high delay, ~90 hops) and the chain-end leader is a permanent
-  hotspot (Lindsey & Raghavendra, 2002).
+  every round (high delay, ~77 hops) and round-robin leadership still assigns
+  the costly multipath sink hop to far or energy-poor nodes
+  (Lindsey & Raghavendra, 2002).
 - **SEP / DEEC** — heterogeneity-aware cluster-head election (advanced nodes at
   2x initial energy carry the load), the standard heterogeneous baselines
-  (Smaragdakis et al., 2004; Qing et al., 2006).
+  (Smaragdakis et al., 2004; Li et al., 2006).
 - **ClusterChain-H** — a hybrid combining LEACH-style clustering with a
   PEGASIS-style refined chain, plus four mechanisms: MST chain geometry (removes
   PEGASIS's long greedy links), an energy + sink-proximity **rotating terminus**
-  (removes the permanent leader hotspot), heterogeneity-aware election (SEP/DEEC
+  (energy-aware leadership: the sink hop always lands on a high-energy near-sink
+  node), heterogeneity-aware election (SEP/DEEC
   style), and a tunable chain count K that trades delay against lifetime (K=1 is
   lifetime-optimal; higher K adds parallel chains that cut delay).
 
 All protocols share the same `energy.py`, seed set, and deployment, so comparisons
 are fair. ClusterChain-H generalises the SEP/DEEC heterogeneity idea into a
-clustering + chaining hybrid and removes the PEGASIS leader hotspot via the
+clustering + chaining hybrid and replaces blind round-robin leadership via the
 rotating terminus across parallel chains.
 
 ## Key Results
@@ -44,7 +46,7 @@ Network lifetime, delivery and delay averaged over **20 seeded runs**
 | LEACH (het) | 912 | 0.98 | 1.0 | 0.39x |
 | PEGASIS (het) | 2291 | 0.99 | 77.2 | 1.00x |
 | SEP | 1528 | 0.99 | 1.0 | 0.67x |
-| DEEC | 1213 | 0.99 | 1.0 | 0.53x |
+| DEEC | 1184 | 0.99 | 1.0 | 0.52x |
 | DCK-LEACH (2022) | 1171 | 1.00 | 3.0 | 0.51x |
 | NPSOP (2023) | 2092 | 1.00 | 2.0 | 0.91x |
 | **ClusterChain-H (K=1)** | **3038** | **0.96** | 74.7 | **1.33x** |
@@ -162,12 +164,13 @@ Every result in this repo is reproducible from a fixed seed set with **both** RN
    Wireless Microsensor Networks" (LEACH).
 2. Lindsey, S. & Raghavendra, K. (2002) — "PEGASIS: Power-Efficient Gathering in
    Sensor Information Systems".
-3. Smaragdakis, G. et al. (2004) — "SEP: A Stable Election Protocol for clustered
-   heterogeneous WSNs".
-4. Qing, L. et al. (2006) — "Design of a distributed energy-efficient clustering
-   algorithm for heterogeneous WSNs" (DEEC).
-5. Kalpakis, K. et al. (2003) — "Maximum Lifetime Data Gathering in WSNs"
-   (MST energy floor).
+3. Smaragdakis, G., Matta, I., Bestavros, A. (2004) — "SEP: A Stable Election
+   Protocol for clustered heterogeneous WSNs" (*SANPA*, workshop with MASS).
+4. Li, Q., Zhu, Q., Wang, M. (2006) — "Design of a distributed energy-efficient
+   clustering algorithm for heterogeneous WSNs" (DEEC), *Computer Communications*.
+5. Kalpakis, K. et al. (2003) — "Efficient algorithms for maximum lifetime data
+   gathering and aggregation in WSNs" (MLDA), *Computer Networks*; MST-traversal
+   PEGASIS chains after Meghanathan, N. (2009), *KSII TIIS*.
 
 ## License
 

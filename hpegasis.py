@@ -5,11 +5,12 @@ baseline, so the paper can quantify the geometry+rotation gain independently of 
 heterogeneity-election gain:
 
   * Chain is built with Prim's MST (squared-distance weights) instead of greedy
-    nearest-neighbour, then traversed into a single ordering — removes PEGASIS's
-    long greedy links (the H-PEGASIS structural mechanism).
+    nearest-neighbour, then traversed into a single ordering — MST-traversal
+    chain construction in the style of Meghanathan (KSII TIIS 2009) removes
+    PEGASIS's long greedy links.
   * The sink-facing terminus is the alive node maximising residual energy and
-    proximity to the sink, rotated every round (the rotating-leader mechanism),
-    instead of a fixed chain-end leader.
+    proximity to the sink, rotated every round (energy-aware leadership),
+    instead of PEGASIS's blind round-robin order.
   * Homogeneous by default: no SEP/DEEC heterogeneity-aware election. This is
     deliberate — H-PEGASIS isolates the *geometry* contribution; ClusterChain-H
     adds the heterogeneity-election contribution on top.

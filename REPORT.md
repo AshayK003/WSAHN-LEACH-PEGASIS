@@ -16,10 +16,10 @@ literature:
   sink. It distributes the CH energy burden but wastes energy when CHs are far from
   the sink and provides no path diversity.
 - **PEGASIS** (Power-Efficient Gathering in Sensor Information Systems, Lindsey &
-  Raghavendra 2002) forms a single greedy chain; data is fused along the chain and a
-  single leader reaches the sink. It is energy-frugal but suffers **~100-hop
-  end-to-end delay** and a **permanent leader hotspot** (the leader always performs
-  the expensive multipath sink transmission).
+  Raghavendra 2002) forms a single greedy chain; data is fused along the chain and
+  leadership rotates round-robin (node `i mod N`), so every node in turn performs
+  the expensive multipath sink transmission — including far or energy-poor nodes —
+  while the ~100-hop chain sets end-to-end delay.
 
 **Objective.** This project (a) implements and fairly evaluates LEACH and PEGASIS
 under a common first-order radio energy model, (b) adds heterogeneity-aware
@@ -35,33 +35,35 @@ lifetime, packet delivery, delay, and energy trade-off, and why?*
 | Protocol | Year | Core idea | Known weakness |
 |----------|------|-----------|----------------|
 | LEACH [1] | 2000 | Rotating CHs, direct CH→sink | CHs far from sink die fast; no multi-hop |
-| PEGASIS [2] | 2002 | Greedy chain, single leader | High latency; leader hotspot |
+| PEGASIS [2] | 2002 | Greedy chain, round-robin leader | High latency; blind rotation still assigns the multipath sink hop to far/low-energy nodes |
 | SEP [3] | 2004 | Heterogeneous (2-level) CH election | Static 2-level only |
 | DEEC [4] | 2006 | Heterogeneity + residual-energy CH prob. | Still cluster-only, direct to sink |
 | Multi-leader PEGASIS variants | — | Multiple chain leaders / double chains | Added complexity, no heterogeneity |
-| H-PEGASIS | — | MST-refined chain geometry + rotating leader | Homogeneous only; no heterogeneity-aware election |
-| PDCH-style partitioning | — | Chain partitioning + dual-cluster-head hybrid | Homogeneous; ignores node-type energy weighting |
+| H-PEGASIS family | — | Hierarchical chain routing (parallel transmissions); MST-traversal chain construction [5b] | Homogeneous only; no heterogeneity-aware election |
+| PDCH-style double head | — | Two cluster heads share one chain's load | Homogeneous; ignores node-type energy weighting |
 | DCK-LEACH [6] | 2022 | Dual cluster-head (primary + vice), K-means/Canopy | Cluster-only; vice head still pays a direct multipath sink hop |
 | NPSOP [7] | 2023 | PSO-selected CHs + routing paths | Cluster-only; CH→sink direct hop bounds lifetime |
 | HDQN / MADII [8] | 2023–2025 | DRL learned routing | Longer reported lifetime, but needs training + compute on constrained nodes |
 
 ClusterChain-H generalises SEP/DEEC-style heterogeneity into a **clustering +
-chaining hybrid** and removes the PEGASIS leader hotspot via an energy- and
-sink-proximity **rotating terminus** across **parallel chains**.
+chaining hybrid** and replaces PEGASIS's blind round-robin leadership with an
+energy- and sink-proximity **rotating terminus** across **parallel chains** —
+so the costly multipath sink hop is always taken by a high-energy, near-sink
+node instead of whichever node the rotation happens to land on.
 
-**Positioning vs prior chain refinements.** H-PEGASIS-style MST-refined geometry
-with a rotating leader, and PDCH-style chain partitioning with dual cluster heads,
-already replace greedy chaining with refined geometry and leader rotation,
-but both are *homogeneous* protocol families: every node carries the same initial energy,
+**Positioning vs prior chain refinements.** MST-traversal chain construction
+(Meghanathan [5b]) already replaces greedy chaining with refined geometry, and
+the H-PEGASIS family / PDCH-style double heads add hierarchy and load-sharing,
+but all are *homogeneous* protocol families: every node carries the same initial energy,
 so their election cannot exploit heterogeneity. The contribution of ClusterChain-H
 is the **fusion** of MST+rotation chain geometry with SEP/DEEC-style
 heterogeneity-aware election — advanced (2×-energy) nodes are steered toward the
 expensive relay/aggregation roles while normal nodes are spared. This is a
-combination, not a new primitive; its value is that it retains H-PEGASIS/PDCH's
-geometry gains *and* adds the heterogeneity margin that those protocols forgo.
-We therefore benchmark against H-PEGASIS/PDCH-style geometry as the structural
+combination, not a new primitive; its value is that it retains the MST-geometry
+gains *and* adds the heterogeneity margin that those protocols forgo.
+We therefore benchmark against MST-geometry + rotating-leader construction as the structural
 baseline and against SEP/DEEC as the heterogeneity baseline, and show the
-combination (1.99× SEP, 2.50× DEEC) exceeds either axis alone.
+combination (1.99× SEP, 2.57× DEEC) exceeds either axis alone.
 
 **Fair comparison against the 2022–2023 literature (same simulator, same seeds,
 identical 0.55 J/node budget, 20 runs, full heterogeneous deployment).** Recent
@@ -130,18 +132,20 @@ communication-range requirement and is exercised in Scenario 2.
    uses `p = 0.05` per its own — each protocol runs at its literature-standard
    CH probability, so the comparison tests canonical configurations, not a
    single forced value.
-2. **PEGASIS [2]** — greedy nearest-neighbour chain rebuilt every round; data fused to a
-   single leader that transmits to the sink (delay ≈ chain length).
+2. **PEGASIS [2]** — greedy nearest-neighbour chain rebuilt every round; data fused
+   along the chain to a round-robin leader that transmits to the sink (delay ≈
+   chain length; the sink hop lands on far/low-energy nodes 1/N of the time).
 3. **SEP / DEEC [3, 4]** — heterogeneity-aware CH election (advanced nodes, 2× initial
    energy; DEEC adds residual-energy weighting).
 4. **ClusterChain-H** — four mechanisms:
-   - **Heterogeneity-aware election**: CH/relay score = weighted residual energy ×
-     node type (SEP/DEEC style [3, 4]) + sink proximity.
-   - **MST chain geometry** (Prim's MST, O(N²)): near the per-round energy floor
-     (Kalpakis et al. [5]), removing PEGASIS's long greedy links.
-   - **Rotating terminus**: the sink-facing chain end is the node maximising
-     residual energy and sink proximity, rotated every round (removes the leader
-     hotspot).
+    - **Heterogeneity-aware election**: CH/relay score = weighted residual energy ×
+      node type (SEP/DEEC style [3, 4]) + sink proximity.
+    - **MST chain geometry** (Prim's MST, O(N²)): minimum-total-length aggregation
+      structure in the MLDA spirit (Kalpakis et al. [5]; MST-traversal chains [5b]),
+      removing PEGASIS's long greedy links.
+    - **Rotating terminus**: the sink-facing chain end is the node maximising
+      residual energy and sink proximity, rotated every round (replaces blind
+      round-robin leadership with energy-aware leadership).
    - **Adaptive chain density K**: parallel chains trade the extra sink hops for
      lower delay (homogeneous ablation still gives 1.45× PEGASIS lifetime).
 
@@ -225,7 +229,7 @@ NPSOP) are re-implemented in this same simulator — not cited from their papers
 |----------|---------------:|------:|----:|-------------:|-----------:|
 | LEACH | 912 | ±8 | 0.98 | 1.0 | 0.39× |
 | PEGASIS | 2291 | ±41 | 0.99 | 77.2 | 1.00× |
-| DEEC | 1213 | ±30 | 0.99 | 1.0 | 0.53× |
+| DEEC | 1184 | ±21 | 0.99 | 1.0 | 0.52× |
 | SEP | 1528 | ±86 | 0.99 | 1.0 | 0.67× |
 | DCK-LEACH (2022) | 1171 | ±12 | 1.00 | 3.0 | 0.51× |
 | NPSOP (2023) | 2092 | ±110 | 1.00 | 2.0 | 0.91× |
@@ -235,7 +239,7 @@ NPSOP) are re-implemented in this same simulator — not cited from their papers
 | **ClusterChain-H (K=3)** | **2819** | ±159 | **0.98** | 24.7 | **1.23×** |
 
 ClusterChain-H delivers **1.33× the lifetime of heterogeneity-aware PEGASIS**
-(3038 vs 2291), **1.99× SEP** (1528) and **2.50× DEEC** (1213). Its PDR (0.96 at
+(3038 vs 2291), **1.99× SEP** (1528) and **2.57× DEEC** (1184). Its PDR (0.96 at
 K=1) is marginally *below* the baselines' ~0.99 — an honest, expected consequence of
 the single-chain topology: when the rotating terminus dies on its sink hop, the whole
 round's fused payload is lost, exactly as in vanilla PEGASIS. This is the measured
@@ -256,7 +260,7 @@ not longevity — as §9.2 shows, CCH's election spares normal nodes 2.56× long
 advanced nodes survive after them, a property H-PEGASIS (homogeneous election) does not
 provide. The combination therefore reproduces H-PEGASIS's geometry gain *and* adds a
 heterogeneity fairness guarantee at zero lifetime cost — which is why it still beats the
-heterogeneity-only baselines SEP (1.99×) and DEEC (2.50×) by a wide margin.
+heterogeneity-only baselines SEP (1.99×) and DEEC (2.57×) by a wide margin.
 (75→37→25 hops). The best lifetime config (K=1) is reported as the headline; K=3 is
 the low-delay option (25 hops vs PEGASIS's 77) for time-sensitive sensing.
 
@@ -306,7 +310,7 @@ over the same 20 coupled seeds (`eval_supplement.json`).
 | LEACH | 941 | 1.0 |
 | PEGASIS | 2396 | 156.7 |
 | SEP | 1776 | 1.0 |
-| DEEC | 1321 | 1.0 |
+| DEEC | 1271 | 1.0 |
 | **ClusterChain-H (K=3)** | **3306** | **50.7** |
 
 At N=200 ClusterChain-H reaches **~1.38× PEGASIS lifetime** with **3.1× lower delay**
@@ -366,7 +370,7 @@ K=1 configuration assumes the unlimited-range regime of §9.1.
 ## 10. Conclusions
 
 ClusterChain-H dominates the heterogeneity-aware baselines on lifetime (1.33×
-PEGASIS, 1.99× SEP, 2.50× DEEC) and the recent 2022–2023 CH-optimisation
+PEGASIS, 1.99× SEP, 2.57× DEEC) and the recent 2022–2023 CH-optimisation
 literature re-implemented in this simulator (2.6× DCK-LEACH, 1.5× NPSOP), with
 PDR of 0.96–0.98 (marginally below the baselines' ~0.99 — the measured cost of the
 single-chain topology, counted consistently across all protocols) and a delay knob
@@ -389,16 +393,22 @@ evaluation harnesses, and reproducibility artifacts are open in the repository.
 
 ## 11. References
 
-1. Heinzelman, W. et al. "Energy-Efficient Communication Protocol for Wireless
-   Sensor Networks." *HICSS*, 2000.
+1. Heinzelman, W., Chandrakasan, A., Balakrishnan, H. "Energy-Efficient
+   Communication Protocol for Wireless Microsensor Networks." *Proc. HICSS*, 2000.
 2. Lindsey, S., Raghavendra, C. "PEGASIS: Power-Efficient Gathering in Sensor
-   Information Systems." *IEEE Aerospace*, 2002.
-3. Smaragdakis, G. et al. "SEP: A Stable Election Protocol for clustered
-   heterogeneous WSNs." *MASS*, 2004.
-4. Qing, L. et al. "DEEC: A Distributed Energy-Efficient Clustering for
-   heterogeneous WSNs." *IEEE WiCom*, 2006.
-5. Kalpakis, K. et al. "Maximum Lifetime Data Gathering in WSNs." *IEEE
-   Transactions on Networking*, 2003 (MST energy floor).
+   Information Systems." *Proc. IEEE Aerospace Conf.*, 2002.
+3. Smaragdakis, G., Matta, I., Bestavros, A. "SEP: A Stable Election Protocol for
+   clustered heterogeneous WSNs." *Proc. SANPA* (workshop held with MASS), 2004.
+4. Li, Q., Zhu, Q., Wang, M. "DEEC: Design of a distributed energy-efficient
+   clustering algorithm for heterogeneous WSNs." *Computer Communications*,
+   29(12), 2230–2237, 2006.
+5. Kalpakis, K., Dasgupta, K., Namjoshi, P. "Efficient algorithms for maximum
+   lifetime data gathering and aggregation in wireless sensor networks."
+   *Computer Networks*, 42, 697–716, 2003 (MLDA formulation; conf. version at
+   IEEE ICN 2002).
+5b. Meghanathan, N. "Use of Tree Traversal Algorithms for Chain Formation in the
+   PEGASIS Data Gathering Protocol." *KSII Trans. Internet and Information
+   Systems*, 3(3), 2009 (MST-based PEGASIS chain construction).
 6. Wu, M. et al. "A Dual Cluster-Head Energy-Efficient Routing Algorithm Based on
    Canopy Optimization and K-Means for WSN (DCK-LEACH)." *Sensors*, 22(24), 9731,
    2022.
@@ -436,8 +446,8 @@ merely in expectation). Metrics: FND, LAST, PDR, hop delay, and per-class
 
 The energy-gradient relay (RACR-style residual-energy / distance / progress
 next-hop score) spreads load — FND rises to 986–1238 — but its greedy local
-score ignores the global per-round energy floor that the MST construction
-minimises, so total radio cost per round rises and the whole network collapses
+score ignores the global minimum-total-length structure that the MST construction
+optimises, so total radio cost per round rises and the whole network collapses
 sooner (0.73–0.82×). The selective dual-terminus (vice node added only to long
 chains, activated on primary-terminus death) is statistically indistinguishable
 from baseline (1.01×): near end-of-life the vice is also depleted, so the
