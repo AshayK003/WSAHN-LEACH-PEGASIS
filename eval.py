@@ -3,9 +3,9 @@
 Baselines (like-for-like, same energy.py):
   LEACH        - randomized CH rotation, single-hop CH->sink (homogeneous)
   PEGASIS      - greedy NN chain, fixed-ish leader (homogeneous)
-  SEP / DEEC   - heterogeneity-aware clustering (single-hop CH->sink)
-  PEGASIS-MST  - our geometry+rotation fair variant (homogeneous) for ablation
-  ClusterChainH- the proposed protocol (clustered / multichain / adaptive)
+   SEP / DEEC   - heterogeneity-aware clustering (single-hop CH->sink)
+   PEGASIS-MST  - our geometry+rotation fair variant (homogeneous) for ablation
+   ClusterChainH- the proposed protocol (clustered / multichain / adaptive)
 
 Metrics per (protocol, N): FND, 50%-dead (HND), last-dead (lifetime),
 stable period, early-PDR, mean delay (hops), energy x delay, throughput,
@@ -50,7 +50,9 @@ def _milestone(hists, n_total, frac):
     for h in hists:
         if not h:
             continue
-        out.append(next((r for r, a, *_ in h if a <= frac * n_total), h[-1][0]))
+        # Strict inequality: first round with a death (alive < frac*N).
+        # (<= would fire at round 1 whenever alive == N, i.e. FND = 1.)
+        out.append(next((r for r, a, *_ in h if a < frac * n_total), h[-1][0]))
     return np.array(out)
 
 
@@ -96,7 +98,7 @@ def protocol_set(n_nodes):
         'SEP': lambda: run_protocol(SEP, n_nodes, m=M, a_mult=A),
         'DEEC': lambda: run_protocol(DEEC, n_nodes, m=M, a_mult=A),
         'PEGASIS-MST': lambda: run_protocol(ClusterChainH, n_nodes, m=0.0, a_mult=1.0,
-                                            mode='multichain', K=1),
+                                             mode='multichain', K=1),
         'CCH-multiK2': lambda: run_protocol(ClusterChainH, n_nodes, m=M, a_mult=A,
                                             mode='multichain', K=2),
         'CCH-multiK3': lambda: run_protocol(ClusterChainH, n_nodes, m=M, a_mult=A,

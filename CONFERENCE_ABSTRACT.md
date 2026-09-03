@@ -48,11 +48,11 @@ same model: both remain clustering protocols whose heads pay a direct multipath 
 hop, and ClusterChain-H outperforms them by **2.6x DCK-LEACH (3038 vs 1171)** and
 **1.5x NPSOP (3038 vs 2092)** in lifetime. A homogeneous ablation (geometry +
 rotation only, no heterogeneity) yields **1.45x the lifetime of homogeneous PEGASIS
-(1742 ± 19 vs 1200 rounds)**, confirming the structural mechanisms are independently
+(1742 ± 38 vs 1200 rounds)**, confirming the structural mechanisms are independently
 effective; the full heterogeneous gain combines that structural contribution with the
-legitimate heterogeneity-aware election. Learned routing (HDQN, DRL-GNN) is reported
-in the survey literature to reach longer lifetimes (~4000+ rounds in their own
-simulators) but needs a training loop unsuitable for the constrained nodes this
+legitimate heterogeneity-aware election. Learned routing (HDQN, MADII) is reported
+in the literature to reach longer lifetimes in their own simulators but needs a
+training loop unsuitable for the constrained nodes this
 protocol targets, and is left as explicit future work — it has not been reproduced in
 our model and is not a comparison claim. Ablation study (Section 12) shows two
 popular next-step mechanisms (energy-gradient relay, selective dual-terminus)

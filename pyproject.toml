@@ -3,7 +3,7 @@ name = "wsahn-leach-pegasis"
 version = "1.0.0"
 description = "ClusterChain-H: heterogeneity-aware hybrid WSN routing comparison (LEACH / PEGASIS / SEP / DEEC)"
 requires-python = ">=3.11"
-dependencies = ["numpy<2", "matplotlib>=3.7"]
+dependencies = ["numpy<2", "matplotlib>=3.7", "pillow>=10"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

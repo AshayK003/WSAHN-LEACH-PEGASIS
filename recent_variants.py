@@ -6,7 +6,7 @@ Two mechanisms are portable and tested here:
   - PSOCH     : NPSOP (Wireless Pers Commun 2023) PSO-selected cluster heads
 
 Both use the shared energy.py so the comparison vs ClusterChain-H is honest.
-DRL-based schemes (HDQN, DRL-GNN) are NOT implemented: they require a training
+DRL-based schemes (HDQN, MADII) are NOT implemented: they require a training
 loop and their published numbers come from different simulators, so a direct
 number comparison would be meaningless. OEE-WCRD's CH-scoring idea is already
 covered by the SEP/DEEC baselines in eval_full.py.
@@ -217,8 +217,7 @@ class PSOCH:
             total += tx_energy(d) + rx_energy() + da_energy()
             loads[chs.index(c)] += 1
         for c in chs:
-            total += tx_energy(c.distance_to(self.sink)) + \
-                rx_energy() * 0  # sink rx negligible
+            total += tx_energy(c.distance_to(self.sink))  # sink rx negligible
         # load balance penalty
         if loads:
             total += 50.0 * (max(loads) - min(loads))

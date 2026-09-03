@@ -39,11 +39,10 @@ def run(cls, n_nodes, seeds, **kw):
 
 
 def milestone(hists, n_total, frac):
-    # frac=1.0 means "last node dead" -> use the final round of each history,
-    # not the first round where alive<=n_total (which is always round 0).
-    if frac >= 1.0:
-        return np.array([h[-1][0] for h in hists if h])
-    return np.array([next((r for r, a, *_ in h if a <= frac * n_total), h[-1][0])
+    # frac=1.0 means FIRST death (first round with alive < n_total, strict:
+    # <= would fire at round 1 since alive == N). Last-death is handled
+    # separately by reading each history's final round (see metrics/LAST).
+    return np.array([next((r for r, a, *_ in h if a < frac * n_total), h[-1][0])
                      for h in hists if h])
 
 

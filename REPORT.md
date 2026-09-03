@@ -43,7 +43,7 @@ lifetime, packet delivery, delay, and energy trade-off, and why?*
 | PDCH-style partitioning | — | Chain partitioning + dual-cluster-head hybrid | Homogeneous; ignores node-type energy weighting |
 | DCK-LEACH [6] | 2022 | Dual cluster-head (primary + vice), K-means/Canopy | Cluster-only; vice head still pays a direct multipath sink hop |
 | NPSOP [7] | 2023 | PSO-selected CHs + routing paths | Cluster-only; CH→sink direct hop bounds lifetime |
-| HDQN / DRL-GNN [8] | 2021–2024 | DRL/GNN learned routing | Highest reported lifetime, but needs training + compute on constrained nodes |
+| HDQN / MADII [8] | 2023–2025 | DRL learned routing | Longer reported lifetime, but needs training + compute on constrained nodes |
 
 ClusterChain-H generalises SEP/DEEC-style heterogeneity into a **clustering +
 chaining hybrid** and removes the PEGASIS leader hotspot via an energy- and
@@ -86,7 +86,7 @@ multipath sink hop per head. **K is a delay/lifetime knob, not a hidden winner**
 K=1/2/3 lifetimes (3038/2931/2819) are statistically tied within 95% CI, and higher
 K strictly lowers delay (75→37→25 hops). We therefore position the 2022–2023
 clustering literature as baselines we beat, and flag **learned routing (HDQN,
-DRL-GNN)** — reported in the survey literature to reach ~4000+ rounds *in their own
+MADII)** — reported in the literature to reach longer lifetimes *in their own
 simulators* — as the one class we have not matched. It is not a comparison claim: we
 have not reproduced it in this model, and it requires a training loop unsuitable for
 the constrained nodes this protocol targets. Leave it as explicit future work.
@@ -169,7 +169,7 @@ communication-range requirement and is exercised in Scenario 2.
 | Packet size | 4000 bits |
 | Traffic pattern | Periodic: 1 packet/source/round, in-network fused |
 | COMM_RANGE | Unlimited (default); 35 m (Scenario 2) |
-| Seeds | 20 (N=100): `1000 + 7i`; 8 (N=200): fixed set; 8 (N=500): fixed set |
+| Seeds | 20 (N=100 canonical); 8 (N=200 scale table, §9.4); 20 (relay scale N≤500, §12.4); 8 (N=500 sweep) |
 | Max rounds | 6000 (full lifetime to last-node-death; both RNGs seeded per seed) |
 | Metrics | Throughput, PDR, E2E delay, energy, lifetime, loss |
 
@@ -268,47 +268,49 @@ should outlive normal nodes — the heterogeneity-aware election doing its job. 
 the first-death round of each class and the Energy×Delay (E×D) composite (lower is
 better) over the stable window.
 
-| Config | First normal death | First advanced death | Adv/normal survival | E×D (×10⁻³) |
+| Config | First normal death | First advanced death | Adv/normal survival | E×D (J·hops) |
 |--------|-------------------:|---------------------:|--------------------:|------------:|
-| CCH-K1 | 493 | 1260 | 2.56× | 3.15 |
-| CCH-K2 | 225 | 787 | 3.50× | 1.56 |
-| CCH-K3 | 199 | 1040 | 5.22× | 1.03 |
+| CCH-K1 | 493 | 1260 | 2.56× | 2.57 |
+| CCH-K2 | 225 | 787 | 3.50× | 1.29 |
+| CCH-K3 | 199 | 1040 | 5.22× | 0.86 |
 
 Normal nodes survive **2.5–5.2× longer** in the presence of advanced nodes than
 advanced nodes survive after them — the election explicitly spares low-energy normal
 nodes, exactly the SEP/DEEC design intent, extended to a chaining topology. E×D
-drops monotonically with K (3.15 → 1.03 ×10⁻³) because higher K trades a small
+drops monotonically with K (2.57 → 0.86 J·hops) because higher K trades a small
 lifetime for a much shorter delay, confirming K as a clean efficiency/delay dial rather
-than a hidden lifetime lever. The per-class tracking is now recorded by the core
-protocol (`class_history`) so these figures are reproducible from seed, not read off a
-secondary ablation script.
+than a hidden lifetime lever. The per-class tracking is recorded by the core
+protocol (`class_history`); the figures above are the means over the same 20
+coupled seeds, reproduced in `eval_supplement.json` via `eval_supplement.py`.
 
 ### 9.3 Homogeneous ablation (N=100, 20 seeds) — geometry + rotation only
 
 With no advanced nodes (0.5 J/node, every protocol equal), ClusterChain-H (K=1)
-beats homogeneous PEGASIS by **1.45×** (1742 ± 19 vs 1200 rounds), confirming the
+beats homogeneous PEGASIS by **1.45×** (1742 ± 38 vs 1200 rounds), confirming the
 MST geometry + rotating terminus are independently effective. The full heterogeneous
 gain (1.33× over heterogeneity-aware PEGASIS) is this structural contribution plus the
 legitimate heterogeneity-aware election — not extra battery.
 
 The same structural contribution compounds under the first-class `relay` mode
 (rotating relay-sink tier): ClusterChain-H reaches **~2.0× homogeneous PEGASIS**
-(2417 rounds) with neutral PDR, because each chain's terminus forwards to the nearest
+(2417 ± 37 rounds) with neutral PDR, because each chain's terminus forwards to the nearest
 of R rotating relays instead of the far off-field base station — and no single relay
 becomes a permanent bottleneck. The relay→BS forward hop is tracked as infrastructure
-cost and never folded into sensor energy.
+cost and never folded into sensor energy. All three homogeneous figures are means
+over the same 20 coupled seeds (`eval_supplement.json`).
 
-### 9.4 Scalability (N=200, 8 seeds, means)
+### 9.4 Scalability (N=200, 8 seeds, heterogeneous, means — `eval_supplement.json`)
 
 | Protocol | Lifetime (rnd) | Delay (hops) |
 |----------|---------------:|-------------:|
-| PEGASIS | 2310 | 188 |
-| SEP | 1455 | — |
-| DEEC | 1300 | — |
-| **ClusterChain-H (K=3)** | **3290** | **50.8** |
+| LEACH | 941 | 1.0 |
+| PEGASIS | 2396 | 156.7 |
+| SEP | 1776 | 1.0 |
+| DEEC | 1321 | 1.0 |
+| **ClusterChain-H (K=3)** | **3306** | **50.7** |
 
-At N=200 ClusterChain-H reaches **~1.42× PEGASIS lifetime** with **3.7× lower delay**
-(50.8 vs 188 hops). Trends are stable across scales.
+At N=200 ClusterChain-H reaches **~1.38× PEGASIS lifetime** with **3.1× lower delay**
+(50.7 vs 156.7 hops). Trends are stable across scales.
 
 ### 9.5 Communication-range sensitivity (R = 35 m)
 
@@ -373,8 +375,8 @@ from 75 (K=1) down to 25 hops (K=3) versus PEGASIS's 77. The homogeneous ablatio
 per-node energy budget, not an artefact of extra battery. The gap over the 2022–2023
 clustering schemes is topological: chaining rides short free-space neighbour relays
 while their cluster heads each pay a costly direct multipath sink hop. Learned routing
-(HDQN, DRL-GNN) is the one class not yet matched in this model and is left as explicit
-future work (it is reported in the survey literature at ~4000+ rounds in *their own*
+(HDQN, MADII) is the one class not yet matched in this model and is left as explicit
+future work (it is reported in the literature at longer lifetimes in *their own*
 simulators; we do not claim a like-for-like comparison). The gain is attributable to a
 combination of heterogeneity-aware election and chained/parallel topology with a
 rotating terminus — not a single gimmick. The configurable communication-range
@@ -397,14 +399,18 @@ evaluation harnesses, and reproducibility artifacts are open in the repository.
    heterogeneous WSNs." *IEEE WiCom*, 2006.
 5. Kalpakis, K. et al. "Maximum Lifetime Data Gathering in WSNs." *IEEE
    Transactions on Networking*, 2003 (MST energy floor).
-6. Sudha, M. et al. "A Dual Cluster-Head Energy-Efficient Routing Algorithm
-   (DCK-LEACH)." *Sensors*, 2022.
-7. Huangshui, H. et al. "A Novel Particle Swarm Optimization-Based Clustering and
-   Routing Protocol (NPSOP)." *Wireless Personal Communications*, 2023.
-8. Wang, Z. et al. "Data Transmission Path Optimization for Heterogeneous WSNs
-   Based on Deep Reinforcement Learning (HDQN)." 2021; Yang, J. et al.
-   "Energy-Efficient Adaptive Routing Using DRL (DRL-GNN)." *IEEE IoT Journal*,
-   2025 (representative learned-routing works, 2021–2024).
+6. Wu, M. et al. "A Dual Cluster-Head Energy-Efficient Routing Algorithm Based on
+   Canopy Optimization and K-Means for WSN (DCK-LEACH)." *Sensors*, 22(24), 9731,
+   2022.
+7. Hu, H. et al. "A Novel Particle Swarm Optimization-Based Clustering and
+   Routing Protocol (NPSOP)." *Wireless Personal Communications*, 133, 2175–2202,
+   2023.
+8. Song, Y. et al. "A Data Transmission Path Optimization Protocol for
+   Heterogeneous WSNs Based on Deep Reinforcement Learning (HDQN)." *J. Computer
+   and Communications*, 11(8), 2023; Yang, J. et al. "An Energy-Efficient and
+   Transmission-Efficient Adaptive Routing Algorithm Using Deep Reinforcement
+   Learning (MADII, multi-agent DQN + informer)." *IEEE IoT Journal*, 2025
+   (representative learned-routing works; not reproduced here — see §2).
 
 ---
 
@@ -423,10 +429,10 @@ merely in expectation). Metrics: FND, LAST, PDR, hop delay, and per-class
 
 | Mechanism (literature rank) | LAST | vs K1 | FND | PDR | Note |
 |---|---|---|---|---|---|
-| Multichain K=1 (baseline) | 3038 ± 127 | 1.00× | 493 | 0.97 | — |
-| Multichain K=3 (delay ref) | 2819 | 0.93× | 199 | 0.98 | delay 24.7 vs 74.5 |
+| Multichain K=1 (baseline) | 3038 ± 127 | 1.00× | 493 | 0.96 | — |
+| Multichain K=3 (delay ref) | 2819 | 0.93× | 199 | 0.98 | delay 24.7 vs 74.7 |
 | Energy-gradient relay (#5) | 2480 / 2233 | 0.82× / 0.73× | 986 / 1238 | 1.00 | raises per-round cost |
-| Selective dual-terminus (#7) | 3055 / 2815 | 1.01× / 0.93× | 343 / 166 | 0.96 | failover rarely fires |
+| Selective dual-terminus (#7) | 3055 / 2815 | 1.01× / 0.93× | 343 / 195 | 0.96 / 0.98 | failover rarely fires |
 
 The energy-gradient relay (RACR-style residual-energy / distance / progress
 next-hop score) spreads load — FND rises to 986–1238 — but its greedy local
@@ -547,6 +553,10 @@ infrastructure accounting. Scripts and raw JSON results: `cch_experimental.py`,
 - `leach.py`, `pegasis.py`, `sep.py`, `deec.py`, `clusterchain_h.py` — protocols.
 - `recent_variants.py` — DCK-LEACH (dual head) and NPSOP (PSO CH) baselines,
   re-implemented in this simulator for the fair 2022–2023 literature comparison.
+  Scope note: DualHead ports the primary/vice election mechanism on plain
+  k-means (the paper's Canopy pre-clustering is omitted); PSOCH ports the PSO
+  CH-selection component (the paper's joint routing-path particle encoding is
+  omitted). Both use the shared energy model and identical budget/seeds.
 - `tests/test_protocols.py` — 7 regression tests (all pass).
 - `dashboard_gen.py` — focused LEACH/PEGASIS/ClusterChain-H dashboard + death
   timeline.
@@ -554,6 +564,12 @@ infrastructure accounting. Scripts and raw JSON results: `cch_experimental.py`,
 - `canonical_eval.py` — authoritative 20-seed N=100 benchmark (includes H-PEGASIS); `eval.py` — coupled-seed homogeneous + heterogeneous evaluation. (Legacy: `eval_n100.py`, `eval_scale.py`.)
 - `cch_experimental.py` — ablation protocol (energy-gradient relay, adaptive-K,
   selective dual-terminus fail-over).
+- `eval_supplement.py` → `eval_supplement.json` — per-class fairness + E×D (9.2),
+  homogeneous ablation incl. relay (9.3), N=200 heterogeneous scale table (9.4),
+  and first-class relay-K1 cross-check of the README relay row. The first-class
+  `mode='relay'` reproduces the legacy `RelayRotationClusterChain` harness
+  exactly (both 4554 ± 164), so the ablation prototype and the shipped protocol
+  are the same mechanism.
 - `cch_relaysink.py` — static and rotating relay-sink tier variants.
 - `eval_experimental.py`, `eval_dualterminus.py`, `eval_relaysink.py`,
   `eval_relayrotation.py`, `eval_relayscale.py` — ablation harnesses

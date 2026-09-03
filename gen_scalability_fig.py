@@ -7,7 +7,7 @@ All values below are taken from prior coupled-seed runs in this repo:
   - PEGASIS N=100 = 2291 (eval_canonical.json, heterogeneous). N=200/500 PEGASIS
     is projected flat: lifetime here is chain-topology-bounded (the sink-hop
     cost dominates and per-node load falls with N), consistent with the
-    heterogeneous N=200 run in REPORT section 9.4 (2310, within 1%).
+    heterogeneous N=200 measurement in REPORT section 9.4 (2396, within 5%).
 Pegasus is not re-run here because its per-round chain rebuild is O(N^2) in
 pure Python and exceeds the background runner's time budget at N=500.
 """

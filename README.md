@@ -50,7 +50,7 @@ Network lifetime, delivery and delay averaged over **20 seeded runs**
 | **ClusterChain-H (K=1)** | **3038** | **0.96** | 74.7 | **1.33x** |
 | **ClusterChain-H (K=2)** | **2931** | **0.98** | 37.2 | **1.28x** |
 | **ClusterChain-H (K=3)** | **2819** | **0.98** | 24.7 | **1.23x** |
-| **ClusterChain-H + rotating relay-sink** | **4554** | **1.00** | 73.5 | **1.99x** |
+| **ClusterChain-H + rotating relay-sink** | **4554** | **1.00** | 77.1 | **1.99x** |
 
 **Rotating relay-sink tier.** Adding a relay-collection tier (relays rotated
 among highest-residual nodes) lifts lifetime to 4554 rounds with **PDR 1.00**
@@ -144,7 +144,7 @@ Every result in this repo is reproducible from a fixed seed set with **both** RN
 | Script | Produces | Notes |
 |--------|----------|-------|
 | `python canonical_eval.py` | `eval_canonical.json` + console table | Authoritative N=100 benchmark (20 seeds). Includes H-PEGASIS. Fast (<2 min). |
-| `python eval.py` | `eval_results.json` + `lifetime.png` | N=100/200/500 homogeneous + heterogeneous, coupled-seed. |
+| `python eval.py` | `eval_results.json` | N=100/200 homogeneous + heterogeneous, coupled-seed. |
 | `python eval_full.py` | `eval_full.json`, `lifetime.png` | Full heterogeneous sweep. **N=500 pass is slow** — PEGASIS's per-round O(N^2) chain rebuild exceeds a few-minute budget in constrained runners; N=100/N=200 complete normally. |
 | `python gen_dashboards.py` | `comparison.png`, `dashboard.png`, `dashboard3.png`, `death_timeline.png` | Regenerates the four dashboard figures from current coupled-seed data. |
 | `python gen_timelines.py` | `timelines.png` | 6-panel per-round timelines (alive, PDR, throughput, delay, energy/round, cumulative energy) for LEACH/PEGASIS/SEP/DEEC/CCH-K1/CCH-K3, same 20 coupled seeds. |
