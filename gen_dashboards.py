@@ -32,7 +32,10 @@ from clusterchain_h import ClusterChainH
 M, A, N, MAXR, SEEDS = 0.1, 2.0, 100, 6000, [1000 + i * 7 for i in range(20)]
 
 PROTOCOLS = {
-    'LEACH': (LEACH, {}),
+    # NB: LEACH runs heterogeneously (m/a) like canonical_eval.py — it ignores
+    # heterogeneity in election but its nodes carry the same 0.55 J/node budget,
+    # so the figure matches the paper table (912, not the homogeneous 822).
+    'LEACH': (LEACH, dict(m=M, a_mult=A)),
     'PEGASIS': (PEGASIS, dict(m=M, a_mult=A)),
     'SEP': (SEP, dict(m=M, a_mult=A)),
     'DEEC': (DEEC, dict(m=M, a_mult=A)),

@@ -4,12 +4,15 @@ Run:  internals\\.venv\\Scripts\\python.exe -m pytest tests -q
 """
 import random
 import numpy as np
+import pytest
 from leach import LEACH
 from pegasis import PEGASIS
 from sep import SEP
 from deec import DEEC
 from clusterchain_h import ClusterChainH
 from hpegasis import HPEGASIS
+
+pytestmark = pytest.mark.slow  # full-simulation regressions (60s+); fast unit tests live in test_fast.py
 
 
 def _last(hists):

@@ -106,6 +106,7 @@ class PEGASIS:
 
         sent = len(alive)
         delivered = {n.id for n in alive}
+        by_id = {n.id: n for n in alive}
         total_tx = 0.0
         total_rx = 0.0
         delays = []
@@ -115,7 +116,7 @@ class PEGASIS:
         for node in alive:
             if node.next_id is None:  # leader
                 continue
-            next_node = next((n for n in alive if n.id == node.next_id), None)
+            next_node = by_id.get(node.next_id)
             if next_node is None or not next_node.alive:
                 # cannot forward -> node's own data and any still upstream is lost
                 delivered.discard(node.id)

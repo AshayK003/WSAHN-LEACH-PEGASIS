@@ -48,6 +48,12 @@ class LEACH:
         self.field_x = field_x
         self.field_y = field_y
         self.sink = Node(-1, sink_x, sink_y, energy=float('inf'))
+        if not (0.0 < p_ch < 1.0):
+            raise ValueError(f"p_ch must be in (0,1), got {p_ch}")
+        if n_nodes < 1:
+            raise ValueError(f"n_nodes must be >= 1, got {n_nodes}")
+        if not (0.0 <= m <= 1.0):
+            raise ValueError(f"m must be in [0,1], got {m}")
         self.p = p_ch
         self.round = 0
         self.alive_count = n_nodes
@@ -63,8 +69,9 @@ class LEACH:
 
     def _threshold(self, node: Node) -> float:
         """LEACH threshold T(n) = p / (1 - p * (r mod 1/p)) if n in G else 0"""
-        if self.round - node.last_ch_round >= 1 / self.p:
-            return self.p / (1 - self.p * (self.round % int(1 / self.p)))
+        epoch = max(1, int(round(1 / self.p)))
+        if self.round - node.last_ch_round >= epoch:
+            return self.p / (1 - self.p * (self.round % epoch))
         return 0.0
 
     def _select_cluster_heads(self):
@@ -103,6 +110,7 @@ class LEACH:
 
         sent = len(alive)
         delivered = {n.id for n in alive}
+        by_id = {n.id: n for n in alive}
         total_tx = 0.0
         total_rx = 0.0
         delays = []
@@ -117,7 +125,7 @@ class LEACH:
         for node in alive:
             if node.is_ch or node.ch_id is None:
                 continue
-            ch = next((n for n in alive if n.id == node.ch_id), None)
+            ch = by_id.get(node.ch_id)
             if ch is None or not ch.alive:
                 continue
             d = node.distance_to(ch)

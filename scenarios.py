@@ -2,16 +2,19 @@
 
   1. Communication-range sensitivity (guideline 4/5/6): demonstrate that the
      configurable COMM_RANGE parameter produces range-induced packet loss.
-     Compares PDR at unlimited range vs a finite R = 35 m for the three
-     protocols. Lifetime is unaffected (out-of-range attempts still spend
-     energy), isolating the packet-loss effect.
+     Compares PDR at unlimited range vs a finite R = 35 m for LEACH, PEGASIS,
+     CCH-K1 and CCH-K3 (both RNGs seeded per seed, so topologies are identical
+     across protocols and range conditions). Lifetime is unaffected
+     (out-of-range attempts still spend energy), isolating the packet-loss
+     effect.
 
   2. Energy consumption (guideline 6): plots mean cumulative energy consumed
-     over rounds for LEACH / PEGASIS / ClusterChain-H.
+     over rounds for LEACH / PEGASIS / CCH-K1 / CCH-K3.
 
 Outputs: range_impact.png, energy_consumption.png
 """
 import numpy as np
+import random
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -28,7 +31,8 @@ MAXR = 4000
 PROTOS = {
     "LEACH": (LEACH, {}),
     "PEGASIS": (PEGASIS, {}),
-    "ClusterChain-H": (ClusterChainH, dict(mode="multichain", K=3, m=M, a_mult=A)),
+    "CCH-K1": (ClusterChainH, dict(mode="multichain", K=1, m=M, a_mult=A)),
+    "CCH-K3": (ClusterChainH, dict(mode="multichain", K=3, m=M, a_mult=A)),
 }
 
 
@@ -36,6 +40,8 @@ def run(cls, rng, **kw):
     out = []
     for s in SEEDS:
         energy.COMM_RANGE = rng
+        # Seed BOTH RNGs: node positions use random.uniform.
+        random.seed(s)
         np.random.seed(s)
         out.append(cls(n_nodes=N, **kw).run(MAXR))
     return out
@@ -59,12 +65,16 @@ def cum_energy(hists):
 # ---- run both ranges + cumulative energy ----
 results = {}
 cum = {}
-for name, (cls, kw) in PROTOS.items():
-    hu = run(cls, None, **kw)
-    hr = run(cls, 35.0, **kw)
-    results[(name, None)] = pdr_early(hu)
-    results[(name, 35.0)] = pdr_early(hr)
-    cum[name] = cum_energy(hu)
+try:
+    for name, (cls, kw) in PROTOS.items():
+        hu = run(cls, None, **kw)
+        hr = run(cls, 35.0, **kw)
+        results[(name, None)] = pdr_early(hu)
+        results[(name, 35.0)] = pdr_early(hr)
+        cum[name] = cum_energy(hu)
+finally:
+    # Never leak a finite range into later imports/tests.
+    energy.COMM_RANGE = None
 
 # ---- range_impact.png ----
 fig, ax = plt.subplots(figsize=(8, 5))
@@ -85,7 +95,7 @@ plt.tight_layout(); plt.savefig("range_impact.png", dpi=150); plt.close()
 
 # ---- energy_consumption.png ----
 fig, ax = plt.subplots(figsize=(9, 5.5))
-colors = {"LEACH": "#1f77b4", "PEGASIS": "#d62728", "ClusterChain-H": "#2ca02c"}
+colors = {"LEACH": "#1f77b4", "PEGASIS": "#d62728", "CCH-K1": "#9467bd", "CCH-K3": "#2ca02c"}
 for name in PROTOS:
     y = cum[name]
     ax.plot(np.arange(len(y)), y, label=name, color=colors[name], lw=2)

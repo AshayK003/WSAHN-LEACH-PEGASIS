@@ -66,9 +66,14 @@ class SEP:
         ]
 
     def _select_cluster_heads(self):
-        denom = 1 + self.a_mult * self.m
+        # Standard SEP (Smaragdakis et al. 2004): with advanced fraction m and
+        # EXTRA energy factor a (= a_mult - 1, since a_mult is the total-energy
+        # multiplier, e.g. a_mult=2.0 -> a=1.0 for 2x-energy nodes):
+        #   p_nrm = p_opt / (1 + a*m),  p_adv = p_opt * (1+a) / (1 + a*m).
+        a = self.a_mult - 1.0
+        denom = 1 + a * self.m
         p_n = self.p / denom
-        p_a = self.p * (1 + self.a_mult) / denom
+        p_a = self.p * (1 + a) / denom
         for node in self.nodes:
             node.is_ch = False
             if not node.alive:
@@ -101,6 +106,7 @@ class SEP:
 
         sent = len(alive)
         delivered = {n.id for n in alive}
+        by_id = {n.id: n for n in alive}
         total_tx = 0.0
         total_rx = 0.0
         delays = []
@@ -113,7 +119,7 @@ class SEP:
         for node in alive:
             if node.is_ch or node.ch_id is None:
                 continue
-            ch = next((n for n in alive if n.id == node.ch_id), None)
+            ch = by_id.get(node.ch_id)
             if ch is None or not ch.alive:
                 continue
             d = node.distance_to(ch)

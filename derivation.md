@@ -49,6 +49,13 @@ favours fewer nodes doing the relay work. Numerically minimising E(k) (see
 is minimised by using few cluster heads and letting the multipath sink hop be shared.
 
 ## What the simulation shows (the honest caveat)
+
+> **Legacy note (original ClusterChain, pre-H).** The paragraph below refers to the
+> *original* `clusterchain.py` dense-vs-sparse study (empirical optimum at k = N,
+> 1162 rounds), not to the current ClusterChain-H benchmark (CCH-K1 = 3038 rounds,
+> N = 100 heterogeneous, 20 seeds). It is retained as history; the authoritative
+> numbers are in `eval_canonical.json` and REPORT §9.1.
+
 The empirical lifetime optimum is **k = N (dense mode, 1162 rounds)**, *not* k*=4.
 The simple E(k) model above misses a second-order effect: with few cluster heads, the
 heads and the rotation terminus bear disproportionate relay + fusion load and die early,

@@ -9,6 +9,7 @@ permanent leader hotspot and keeping end-to-end delay low.
 """
 import argparse
 import json
+import random
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
@@ -27,18 +28,23 @@ def run_experiment(n_nodes=100, max_rounds=2000, seed=42, n_runs=3):
     for run_idx, s in enumerate(random_seeds):
         print(f"\n=== Run {run_idx + 1}/{n_runs} (seed={s}) ===")
 
+        # Seed BOTH RNGs so every protocol sees the identical topology
+        # (node positions use random.uniform; np.seed alone is not enough).
+        random.seed(s)
         np.random.seed(s)
         leach = LEACH(n_nodes=n_nodes)
         leach_hist = leach.run(max_rounds)
         leach_histories.append(leach_hist)
         print(f"  LEACH: {len(leach_hist)} rounds")
 
+        random.seed(s)
         np.random.seed(s)
         pegasis = PEGASIS(n_nodes=n_nodes)
         pegasis_hist = pegasis.run(max_rounds)
         pegasis_histories.append(pegasis_hist)
         print(f"  PEGASIS: {len(pegasis_hist)} rounds")
 
+        random.seed(s)
         np.random.seed(s)
         cc = ClusterChain(n_nodes=n_nodes, ch_mode='dense', terminus='sink',
                           w_energy=0.7, n_ch=5, adaptive_k=False)

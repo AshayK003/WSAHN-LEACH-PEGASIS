@@ -43,11 +43,11 @@ Network lifetime, delivery and delay averaged over **20 seeded runs**
 |----------|--------------:|----:|------------:|-----------:|
 | LEACH (het) | 912 | 0.98 | 1.0 | 0.39x |
 | PEGASIS (het) | 2291 | 0.99 | 77.2 | 1.00x |
-| SEP | 1358 | 0.99 | 1.0 | 0.59x |
-| DEEC | 1203 | 0.99 | 1.0 | 0.52x |
+| SEP | 1528 | 0.99 | 1.0 | 0.67x |
+| DEEC | 1213 | 0.99 | 1.0 | 0.53x |
 | DCK-LEACH (2022) | 1171 | 1.00 | 3.0 | 0.51x |
 | NPSOP (2023) | 2092 | 1.00 | 2.0 | 0.91x |
-| **ClusterChain-H (K=1)** | **3038** | **0.96** | 73.9 | **1.33x** |
+| **ClusterChain-H (K=1)** | **3038** | **0.96** | 74.7 | **1.33x** |
 | **ClusterChain-H (K=2)** | **2931** | **0.98** | 37.2 | **1.28x** |
 | **ClusterChain-H (K=3)** | **2819** | **0.98** | 24.7 | **1.23x** |
 | **ClusterChain-H + rotating relay-sink** | **4554** | **1.00** | 73.5 | **1.99x** |
@@ -70,7 +70,7 @@ lifetime with PDR of 0.96–0.98 (marginally below the baselines' ~0.99 — the 
 cost of the single-chain topology, where a terminus death on the sink hop clears the
 whole round, counted consistently across all protocols) and a tunable delay
 (K=3: 25 hops vs PEGASIS 77). Against the 2022–2023 CH-optimisation literature it
-reaches **2.7x DCK-LEACH** and **1.5x NPSOP** — both re-implemented in this same
+reaches **2.6x DCK-LEACH** and **1.5x NPSOP** — both re-implemented in this same
 simulator, not cited from their papers. **K is a delay/lifetime knob, not a hidden
 winner**: K=1/2/3 lifetimes (3038/2931/2819) are within each other's 95% CI, and
 higher K strictly lowers delay.
@@ -107,6 +107,7 @@ infrastructure cost and never folded into sensor energy.
 ├── eval_consistency.py / eval_dualterminus.py / eval_experimental.py
 ├── eval_relayrotation.py / eval_relaysink.py / eval_relayscale.py
 ├── gen_dashboards.py    # Regenerates comparison/dashboard/dashboard3/death_timeline PNGs
+├── gen_timelines.py     # Regenerates timelines.png (per-round alive/PDR/throughput/delay/energy curves)
 ├── gen_scalability_fig.py # scalability.png (verified numbers, no re-sim)
 ├── scenarios.py         # Communication-range sensitivity + energy-consumption plots
 ├── dashboard_gen.py     # Legacy LEACH/PEGASIS/CCH dashboard + death timeline
@@ -146,6 +147,7 @@ Every result in this repo is reproducible from a fixed seed set with **both** RN
 | `python eval.py` | `eval_results.json` + `lifetime.png` | N=100/200/500 homogeneous + heterogeneous, coupled-seed. |
 | `python eval_full.py` | `eval_full.json`, `lifetime.png` | Full heterogeneous sweep. **N=500 pass is slow** — PEGASIS's per-round O(N^2) chain rebuild exceeds a few-minute budget in constrained runners; N=100/N=200 complete normally. |
 | `python gen_dashboards.py` | `comparison.png`, `dashboard.png`, `dashboard3.png`, `death_timeline.png` | Regenerates the four dashboard figures from current coupled-seed data. |
+| `python gen_timelines.py` | `timelines.png` | 6-panel per-round timelines (alive, PDR, throughput, delay, energy/round, cumulative energy) for LEACH/PEGASIS/SEP/DEEC/CCH-K1/CCH-K3, same 20 coupled seeds. |
 | `python gen_scalability_fig.py` | `scalability.png` | Plots the N=100/200/500 scalability trend from the coupled-seed numbers above (no re-simulation). Use this for the figure. |
 | `python scenarios.py` | `range_impact.png`, `energy_consumption.png` | Communication-range sensitivity + cumulative energy plots. |
 | `python -m pytest tests` | — | 7 tests: all protocols run, lifetimes match, relay mode beats PEGASIS. |

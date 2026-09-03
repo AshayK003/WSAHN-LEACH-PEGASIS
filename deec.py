@@ -74,13 +74,17 @@ class DEEC:
 
     def _select_cluster_heads(self):
         e_avg = self._avg_energy()
+        # Standard DEEC (Qing et al. 2006): election probability scales with
+        # residual/average energy; advanced nodes carry the (1 + a*m) total-
+        # energy factor where a = a_mult - 1 is the EXTRA energy factor.
+        a = self.a_mult - 1.0
         for node in self.nodes:
             node.is_ch = False
             if not node.alive:
                 continue
             ratio = node.energy / e_avg
             if node.is_advanced:
-                p_i = self.p * ratio * (1 + self.a_mult * self.m)
+                p_i = self.p * ratio * (1 + a * self.m)
             else:
                 p_i = self.p * ratio
             p_i = min(p_i, 1.0)
@@ -111,6 +115,7 @@ class DEEC:
 
         sent = len(alive)
         delivered = {n.id for n in alive}
+        by_id = {n.id: n for n in alive}
         total_tx = 0.0
         total_rx = 0.0
         delays = []
@@ -123,7 +128,7 @@ class DEEC:
         for node in alive:
             if node.is_ch or node.ch_id is None:
                 continue
-            ch = next((n for n in alive if n.id == node.ch_id), None)
+            ch = by_id.get(node.ch_id)
             if ch is None or not ch.alive:
                 continue
             d = node.distance_to(ch)

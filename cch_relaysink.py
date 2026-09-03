@@ -120,7 +120,7 @@ class RelaySinkClusterChain(ClusterChainH):
         raw_chains = partition_into_chains(alive, k)
         chains = []
         for ch in raw_chains:
-            sig = frozenset(id(n) for n in ch)
+            sig = frozenset(n.id for n in ch)
             cached = self._chain_store.get(sig)
             if cached is not None:
                 chains.append(build_refined_chain(cached, self.sink,
