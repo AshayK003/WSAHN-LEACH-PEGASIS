@@ -106,14 +106,14 @@ comp = ['LEACH', 'PEGASIS', 'SEP', 'DEEC', 'H-PEGASIS', 'CCH-K3']
 fig, ax = plt.subplots(2, 3, figsize=(15, 9))
 fig.suptitle('Protocol Comparison (N=100, m=0.1, a=2, 20 seeds)', fontsize=14)
 panels = [
-    ('Network Lifetime (rounds)', 'LAST', 3000),
+    ('Network Lifetime (rounds)', 'LAST', None),   # auto: tallest bar + headroom
     ('50% Nodes Dead (rounds)', 'HND', 1500),
-    ('Packet Delivery Ratio', 'PDR', 1.0),
+    ('Packet Delivery Ratio', 'PDR', 'zoom'),      # zoomed y so 0.96 vs 0.99 is visible
     ('End-to-End Delay (hops)', 'DELAY', 100),
-    ('Energy-Delay Product (lower better)', None, 130000),
-    ('Throughput (PDR)', 'PDR', 1.0),
+    ('Energy-Delay Product (lower better)', None, 'log'),  # 54..4248: log shows all
+    ('Throughput (PDR)', 'PDR', 'zoom'),
 ]
-for i, (title, key, ymax) in enumerate(panels):
+for i, (title, key, scale) in enumerate(panels):
     r, c = divmod(i, 3)
     vals = []
     for p in comp:
@@ -126,10 +126,24 @@ for i, (title, key, ymax) in enumerate(panels):
     ax[r][c].bar(comp, vals, color=['#1f77b4', '#d62728', '#ff7f0e',
                                      '#9467bd', '#8c564b', '#2ca02c'])
     ax[r][c].set_title(title)
-    ax[r][c].set_ylim(0, ymax)
-    for j, v in enumerate(vals):
-        ax[r][c].text(j, v, f'{v:.0f}' if v > 10 else f'{v:.2f}',
-                      ha='center', va='bottom', fontsize=8)
+    if scale is None:
+        ax[r][c].set_ylim(0, max(vals) * 1.18)
+        for j, v in enumerate(vals):
+            ax[r][c].text(j, v * 1.02, f'{v:.0f}', ha='center', va='bottom', fontsize=8)
+    elif scale == 'zoom':  # PDR/throughput live in [0.9, 1.0]
+        ax[r][c].set_ylim(0.9, 1.0)
+        for j, v in enumerate(vals):
+            ax[r][c].text(j, min(v + 0.002, 0.997), f'{v:.2f}',
+                          ha='center', va='bottom', fontsize=8)
+    elif scale == 'log':
+        ax[r][c].set_yscale('log')
+        for j, v in enumerate(vals):
+            ax[r][c].text(j, v * 1.15, f'{v:.0f}', ha='center', va='bottom', fontsize=8)
+    else:
+        ax[r][c].set_ylim(0, scale)
+        for j, v in enumerate(vals):
+            ax[r][c].text(j, v, f'{v:.0f}' if v > 10 else f'{v:.2f}',
+                          ha='center', va='bottom', fontsize=8)
 plt.tight_layout()
 plt.savefig('comparison.png', dpi=130)
 plt.close()
@@ -164,11 +178,22 @@ for i, (title, key, ymax) in enumerate(tp):
                 vals.append(METR[p][key])
         ax[r][c].bar(trip, vals,
                      color=['#1f77b4', '#d62728', '#2ca02c'])
-        if ymax:
-            ax[r][c].set_ylim(0, ymax)
-        for j, v in enumerate(vals):
-            ax[r][c].text(j, v, f'{v:.0f}' if v > 10 else f'{v:.2f}',
-                          ha='center', va='bottom', fontsize=8)
+        if key == 'exd':  # 54..4248: log scale so LEACH is visible too
+            ax[r][c].set_yscale('log')
+            for j, v in enumerate(vals):
+                ax[r][c].text(j, v * 1.15, f'{v:.0f}',
+                              ha='center', va='bottom', fontsize=8)
+        elif key == 'PDR':  # zoom so 0.98 vs 0.99 differences show
+            ax[r][c].set_ylim(0.9, 1.0)
+            for j, v in enumerate(vals):
+                ax[r][c].text(j, min(v + 0.002, 0.997), f'{v:.2f}',
+                              ha='center', va='bottom', fontsize=8)
+        else:
+            if ymax:
+                ax[r][c].set_ylim(0, ymax)
+            for j, v in enumerate(vals):
+                ax[r][c].text(j, v, f'{v:.0f}' if v > 10 else f'{v:.2f}',
+                              ha='center', va='bottom', fontsize=8)
     ax[r][c].set_title(title)
 plt.tight_layout()
 plt.savefig('dashboard.png', dpi=130)
