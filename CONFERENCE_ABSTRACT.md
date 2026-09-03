@@ -34,8 +34,11 @@ heterogeneity-aware PEGASIS (2291 ± 41)**, **1.99x SEP (1528 ± 86)** and
 **2.57x DEEC (1184 ± 21)**, with **PDR = 0.96** (PEGASIS 0.99; the small gap is a
 single-chain terminus death clearing the round, an accepted cost of the long
 lifetime) and end-to-end delay of **25-75 hops versus PEGASIS's 77**. K is a
-delay/lifetime knob, not a hidden winner: K=1-3 are within each other's 95% CI on
-lifetime (3038/2931/2819), and higher K strictly lowers delay (75/37/25 hops).
+delay/lifetime knob, not a hidden winner: K=1-3 overlap in 95% CI (no K1–K2 gap;
+paired tests detect only a small K1–K3 cost of ~7%), and higher K strictly lowers
+delay (75/37/25 hops). Every headline gap is significant under paired t and
+Wilcoxon tests (20/20 seeds); H-PEGASIS is statistically tied with CCH-K1,
+confirming geometry sets the ceiling.
 **Where the gain comes from.** An H-PEGASIS baseline (MST-refined geometry + rotating
 leader, run homogeneously) already reaches **3084 ± 120 rounds (1.35x PEGASIS)**,
 showing the structural mechanism accounts for nearly the entire lifetime jump;

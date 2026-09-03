@@ -74,11 +74,12 @@ whole round, counted consistently across all protocols) and a tunable delay
 (K=3: 25 hops vs PEGASIS 77). Against the 2022–2023 CH-optimisation literature it
 reaches **2.6x DCK-LEACH** and **1.5x NPSOP** — both re-implemented in this same
 simulator, not cited from their papers. **K is a delay/lifetime knob, not a hidden
-winner**: K=1/2/3 lifetimes (3038/2931/2819) are within each other's 95% CI, and
+winner**: K=1/2/3 lifetimes (3038/2931/2819) overlap in 95% CI (paired tests find
+no K1–K2 gap, only a small K1–K3 cost), and
 higher K strictly lowers delay.
 
 A **homogeneous ablation** (no advanced nodes; geometry + rotating terminus only)
-gives ClusterChain-H **1.45x** the lifetime of homogeneous PEGASIS (1742 ± 19 vs
+gives ClusterChain-H **1.45x** the lifetime of homogeneous PEGASIS (1742 ± 38 vs
 1200 rounds), confirming the structural mechanisms are independently effective; the
 full heterogeneous gain combines that structural contribution with heterogeneity-aware
 election.
@@ -108,6 +109,8 @@ infrastructure cost and never folded into sensor energy.
 ├── eval_full.py         # N=100/200/500 sweep (N=500 slow; see note below)
 ├── eval_consistency.py / eval_dualterminus.py / eval_experimental.py
 ├── eval_relayrotation.py / eval_relaysink.py / eval_relayscale.py
+├── eval_supplement.py  # per-class + homo-ablation + N=200 evidence -> eval_supplement.json
+├── eval_significance.py # paired t + Wilcoxon significance -> eval_significance.json
 ├── gen_dashboards.py    # Regenerates comparison/dashboard/dashboard3/death_timeline PNGs
 ├── gen_timelines.py     # Regenerates timelines.png (per-round alive/PDR/throughput/delay/energy curves)
 ├── gen_scalability_fig.py # scalability.png (verified numbers, no re-sim)
@@ -150,6 +153,7 @@ Every result in this repo is reproducible from a fixed seed set with **both** RN
 | `python eval_full.py` | `eval_full.json`, `lifetime.png` | Full heterogeneous sweep. **N=500 pass is slow** — PEGASIS's per-round O(N^2) chain rebuild exceeds a few-minute budget in constrained runners; N=100/N=200 complete normally. |
 | `python gen_dashboards.py` | `comparison.png`, `dashboard.png`, `dashboard3.png`, `death_timeline.png` | Regenerates the four dashboard figures from current coupled-seed data. |
 | `python gen_timelines.py` | `timelines.png` | 6-panel per-round timelines (alive, PDR, throughput, delay, energy/round, cumulative energy) for LEACH/PEGASIS/SEP/DEEC/CCH-K1/CCH-K3, same 20 coupled seeds. |
+| `python eval_significance.py` | `eval_significance.json` | Paired t-test + Wilcoxon (per-seed, n=20) behind every headline gap; dependency-free. |
 | `python gen_scalability_fig.py` | `scalability.png` | Plots the N=100/200/500 scalability trend from the coupled-seed numbers above (no re-simulation). Use this for the figure. |
 | `python scenarios.py` | `range_impact.png`, `energy_consumption.png` | Communication-range sensitivity + cumulative energy plots. |
 | `python -m pytest tests` | — | 7 tests: all protocols run, lifetimes match, relay mode beats PEGASIS. |

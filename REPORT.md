@@ -43,6 +43,10 @@ lifetime, packet delivery, delay, and energy trade-off, and why?*
 | PDCH-style double head | — | Two cluster heads share one chain's load | Homogeneous; ignores node-type energy weighting |
 | DCK-LEACH [6] | 2022 | Dual cluster-head (primary + vice), K-means/Canopy | Cluster-only; vice head still pays a direct multipath sink hop |
 | NPSOP [7] | 2023 | PSO-selected CHs + routing paths | Cluster-only; CH→sink direct hop bounds lifetime |
+| HEED [9] | 2004 | Residual-energy + degree, multi-iteration CH election | Needs variable power levels + iteration overhead; discussion baseline (§2.1) |
+| TEEN/APTEEN [10] | 2001–02 | Threshold-driven reactive reporting | Sends less data by design — incomparable under periodic traffic (§2.1) |
+| EEHC [11] | 2003 | Randomised multi-level hierarchy, stochastic tuning | Closest in spirit (hierarchical load spreading); different sink model (§2.1) |
+| Recent metaheuristics [12, 13] | 2024–25 | GWO/PSO-optimised CH selection (centralised) | BS-side optimisation cost; survey + exemplar cited (§2.1) |
 | HDQN / MADII [8] | 2023–2025 | DRL learned routing | Longer reported lifetime, but needs training + compute on constrained nodes |
 
 ClusterChain-H generalises SEP/DEEC-style heterogeneity into a **clustering +
@@ -50,6 +54,33 @@ chaining hybrid** and replaces PEGASIS's blind round-robin leadership with an
 energy- and sink-proximity **rotating terminus** across **parallel chains** —
 so the costly multipath sink hop is always taken by a high-energy, near-sink
 node instead of whichever node the rotation happens to land on.
+
+### 2.1 Why HEED / TEEN / EEHC / recent metaheuristics are discussion-only baselines
+
+A reviewer will rightly ask why the classic HEED/TEEN/EEHC trio and the 2024–25
+metaheuristic wave are cited but not re-implemented. The reasons are comparability,
+not convenience:
+
+- **HEED [9]** elects heads over multiple iterations using residual energy plus node
+  degree, assuming variable transmit power levels and extra control messaging whose
+  cost our first-order model does not account. Porting it without its cost model
+  would flatter it; porting the cost model would change the shared energy
+  accounting all other protocols are judged on.
+- **TEEN/APTEEN [10]** are *reactive*: nodes transmit only on threshold crossings,
+  so they move far less data than our periodic 1-packet/round workload. Any
+  lifetime/PDR comparison would conflate "sent less" with "routed better".
+- **EEHC [11]** is the closest in spirit (randomised hierarchy spreading load over
+  levels, stochastically tuned) and we acknowledge it as such; it assumes a
+  different sink/traffic geometry, so we cite rather than approximate it.
+- **Recent metaheuristics (surveyed in [12]; HGWO [13] as exemplar)** optimise CH
+  selection at the base station with population-based search — a centralised,
+  compute-heavy step outside the distributed protocol class this study compares
+  (same reason NPSOP is represented by its distributed election mechanism only).
+
+The implemented set (LEACH/PEGASIS/SEP/DEEC/H-PEGASIS/DCK-LEACH/NPSOP-mechanism)
+is therefore the complete set of *distributed, periodic-reporting, first-order-model*
+comparators. Extending the harness to reactive or centralised classes is explicit
+future work, not an oversight.
 
 **Positioning vs prior chain refinements.** MST-traversal chain construction
 (Meghanathan [5b]) already replaces greedy chaining with refined geometry, and
@@ -85,8 +116,9 @@ ClusterChain-H outperforms both recent schemes by **2.6× over DCK-LEACH** and
 **1.5× over NPSOP** in lifetime. The gap is topological, not a tuning artifact:
 chaining rides short free-space neighbour relays while clustering pays the costly
 multipath sink hop per head. **K is a delay/lifetime knob, not a hidden winner** —
-K=1/2/3 lifetimes (3038/2931/2819) are statistically tied within 95% CI, and higher
-K strictly lowers delay (75→37→25 hops). We therefore position the 2022–2023
+K=1/2/3 lifetimes (3038/2931/2819) overlap in 95% CI; the paired test (§9.6) finds
+no K1–K2 gap but detects a small consistent K1–K3 cost (−219 rounds, p < 0.01,
+18/20 seeds) — the modest, measured price of the 3× delay cut. We therefore position the 2022–2023
 clustering literature as baselines we beat, and flag **learned routing (HDQN,
 MADII)** — reported in the literature to reach longer lifetimes *in their own
 simulators* — as the one class we have not matched. It is not a comparison claim: we
@@ -246,7 +278,9 @@ round's fused payload is lost, exactly as in vanilla PEGASIS. This is the measur
 trade-off for the long lifetime, not a counting artifact. Against the recent
 literature it reaches **2.6× DCK-LEACH** (3038 vs 1171) and **1.5× NPSOP** (3038 vs
 2092). **K is a delay/lifetime knob, not a hidden winner**: K=1/2/3 lifetimes
-(3038/2931/2819) sit within each other's 95% CI, and higher K strictly lowers delay
+(3038/2931/2819) overlap in 95% CI with no significant K1–K2 gap; the paired test
+(§9.6) detects only a small consistent K1–K3 cost (−219 rounds, 18/20 seeds),
+and higher K strictly lowers delay
 
 **Decomposition of the gain (where the lifetime comes from).** Adding H-PEGASIS —
 the MST-refined chain geometry + rotating leader, run *homogeneously* (no
@@ -340,6 +374,37 @@ energy), isolating the packet-loss effect. Deployment insight: with short radios
 prefer more, shorter chains (higher K) or greedy-NN geometry; the lifetime-optimal
 K=1 configuration assumes the unlimited-range regime of §9.1.
 
+### 9.6 Statistical significance (paired tests, n = 20 coupled seeds)
+
+Confidence intervals describe uncertainty; they do not test the headline gaps.
+Because every protocol ran on the *identical* 20 topologies, per-seed differences
+are paired, so we test CCH-K1 against each baseline with **both** a paired
+Student t-test (exact p, dependency-free implementation in `eval_significance.py`,
+validated against textbook values) and a Wilcoxon signed-rank test (normal
+approximation, n = 20). H0: zero mean/median paired difference. A gap is claimed
+only if **both** reject at α = 0.05. Per-seed data: `eval_significance.json`.
+
+| Baseline vs CCH-K1 | Mean Δ (rounds) | 95% CI | p (paired t) | p (Wilcoxon) | Seeds won | Verdict |
+|---|---|---|---|---|---|---|
+| LEACH | +2126 | ±126 | <1e-15 | <1e-3 | 20/20 | significant |
+| PEGASIS | +747 | ±103 | <1e-10 | <1e-3 | 20/20 | significant |
+| SEP | +1510 | ±118 | <1e-15 | <1e-3 | 20/20 | significant |
+| DEEC | +1854 | ±117 | <1e-15 | <1e-3 | 20/20 | significant |
+| DCK-LEACH | +1867 | ±121 | <1e-15 | <1e-3 | 20/20 | significant |
+| NPSOP | +945 | ±119 | <1e-11 | <1e-3 | 20/20 | significant |
+| H-PEGASIS | −46 | ±61 | 0.16 | 0.37 | 10/20 | **not significant** |
+| CCH-K2 | +107 | ±110 | 0.072 | 0.0095 | 18/20 | not significant (tests disagree) |
+| CCH-K3 | +219 | ±133 | 0.0045 | 0.0061 | 18/20 | significant (small) |
+
+Three readings matter. First, every headline gap (1.33× PEGASIS through 3.3×
+LEACH) is significant under both tests with all 20 seeds in favour — the "×"
+column is not a CI artefact. Second, H-PEGASIS is statistically
+indistinguishable from CCH-K1 (10/20 seeds each way): the geometry mechanism,
+not the election, sets the lifetime ceiling, exactly as §9.1's decomposition
+argues — we state this as a null result, not a win. Third, the K knob has a
+real but small price: K1–K2 is not significant, K1–K3 is (−219 rounds, ~7%),
+which is the measured cost of cutting delay 75→25 hops.
+
 ---
 
 ## 9. Analysis & Interpretation
@@ -421,6 +486,20 @@ evaluation harnesses, and reproducibility artifacts are open in the repository.
    Transmission-Efficient Adaptive Routing Algorithm Using Deep Reinforcement
    Learning (MADII, multi-agent DQN + informer)." *IEEE IoT Journal*, 2025
    (representative learned-routing works; not reproduced here — see §2).
+9. Younis, O., Fahmy, S. "HEED: A Hybrid, Energy-Efficient, Distributed
+   clustering approach for ad hoc sensor networks." *IEEE Trans. Mobile
+   Computing*, 3(4), 366–379, 2004.
+10. Manjeshwar, A., Agrawal, D. P. "TEEN: A Routing Protocol for Enhanced
+    Efficiency in Wireless Sensor Networks." *Proc. IPDPS*, 2001 (APTEEN hybrid
+    extension, *Proc. IPDPS*, 2002).
+11. Bandyopadhyay, S., Coyle, E. J. "An Energy Efficient Hierarchical Clustering
+    Algorithm for Wireless Sensor Networks." *Proc. IEEE INFOCOM*, 1713–1723, 2003.
+12. Shokouhifar, M. et al. "AI-driven cluster-based routing protocols in WSNs: A
+    survey of fuzzy heuristics, metaheuristics, and machine learning models."
+    *Computer Science Review*, 54, 100684, 2024.
+13. Mehrotra, P., Bhardwaj, D. "HGWO: A Novel Hybrid Optimization Algorithm for
+    Energy-Aware Clustering and Routing in WSNs." *Engineering Research Express*,
+    2025 (recent metaheuristic exemplar; centralised BS-side optimisation).
 
 ---
 
@@ -574,8 +653,7 @@ infrastructure accounting. Scripts and raw JSON results: `cch_experimental.py`,
 - `canonical_eval.py` — authoritative 20-seed N=100 benchmark (includes H-PEGASIS); `eval.py` — coupled-seed homogeneous + heterogeneous evaluation. (Legacy: `eval_n100.py`, `eval_scale.py`.)
 - `cch_experimental.py` — ablation protocol (energy-gradient relay, adaptive-K,
   selective dual-terminus fail-over).
-- `eval_supplement.py` → `eval_supplement.json` — per-class fairness + E×D (9.2),
-  homogeneous ablation incl. relay (9.3), N=200 heterogeneous scale table (9.4),
+- `eval_supplement.py` → `eval_supplement.json` — per-class fairness + E×D (9.2),  homogeneous ablation incl. relay (9.3), N=200 heterogeneous scale table (9.4),
   and first-class relay-K1 cross-check of the README relay row. The first-class
   `mode='relay'` reproduces the legacy `RelayRotationClusterChain` harness
   exactly (both 4554 ± 164), so the ablation prototype and the shipped protocol
@@ -584,6 +662,9 @@ infrastructure accounting. Scripts and raw JSON results: `cch_experimental.py`,
 - `eval_experimental.py`, `eval_dualterminus.py`, `eval_relaysink.py`,
   `eval_relayrotation.py`, `eval_relayscale.py` — ablation harnesses
   (aforementioned mechanisms + scale robustness) with matching `.json` results.
+- `eval_significance.py` → `eval_significance.json` — per-seed LAST/PDR/DELAY
+  plus paired t-test + Wilcoxon results behind §9.6 (dependency-free stats,
+  validated against textbook values).
 - Figures: `dashboard3.png`, `death_timeline.png`, `comparison.png`,
   `timelines.png` (per-round alive/PDR/throughput/delay/energy timelines),
   `range_impact.png`, `energy_consumption.png`, `anim_*.gif`.
