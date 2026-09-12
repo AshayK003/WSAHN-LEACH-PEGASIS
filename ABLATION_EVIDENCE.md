@@ -45,6 +45,14 @@ ClusterChain-H multichain K=1 design under the project's fixed benchmark.
                             energy proportionality).
 - `energy.py`               : additive `PAYLOAD_SCALE` (default 1.0,
                             bit-identical; full fast suite green).
+- `cch_sleep.py`            : ClusterChainH subclass with rotating sleep
+                            subset (top-f by election score awake, rest at
+                            5% rx idle; awake pay one extra rx SYNC).
+- `eval_sleep.py`           : verdict run (f in 1.0/0.85/0.7/0.5,
+                            LAST/FND/PDR800/energy-per-report gates).
+- `eval_sleep.json`         : results.
+- `tests/test_sleep.py`     : 4 fast unit tests (range check, f=1.0
+                            trajectory identity, sleeper accounting).
 
 ## Reproduce
     python eval_experimental.py
@@ -52,6 +60,7 @@ ClusterChain-H multichain K=1 design under the project's fixed benchmark.
     python eval_localrepair.py
     python -u eval_lr_canonical.py
     python -u eval_aggregation.py
+    python -u eval_sleep.py
 
 ## Results (mean LAST, xPEG = ratio vs CCH-K1)
 | protocol                     |   LAST | xPEG  |
@@ -63,6 +72,7 @@ ClusterChain-H multichain K=1 design under the project's fixed benchmark.
 | DT-K1 (selective dual-term)  | 3055   | 1.01  |
 | DT-K3 (dual-term, K=3)       | 2815   | 0.93  |
 | LR-K1 (local chain repair)   | 2903   | 0.96  |
+| SLP-f0.7 (sleep subset)      | 1998   | 0.66  |
 
 ## Robustness: margin under fusion traffic (3 seeds, N=100, K=1)
 | alpha | PEGASIS LAST | CCH-K1 LAST | margin |
@@ -88,5 +98,11 @@ multichain K=1 design:
   already near-minimal. Margin holds at x1.32 through alpha=0.9 and touches
   x1.20 at alpha=0.7 — the edge is real under realistic fusion, with a known
   boundary at extreme fusion.
+- Rotating sleep subset fails decisively (0.66x at f=0.7, worse at all f<1):
+  the score-based election is sticky, so a core set serves until burnout
+  while sleepers strand hoarded energy; SYNC + idle overhead adds cost.
+  FND rises (409 -> 1114) and awake-PDR is perfect, but energy-per-report
+  is far worse (677uJ vs 456uJ) — the honesty guard caught what LAST alone
+  already showed. Sleep needs forced rotation + coverage model, not tested.
 Per-class curves confirm heterogeneity works as intended: in DT-K1, normal
 nodes die at round ~356 while advanced nodes survive to ~1113.
