@@ -522,6 +522,8 @@ merely in expectation). Metrics: FND, LAST, PDR, hop delay, and per-class
 | Multichain K=3 (delay ref) | 2819 | 0.93× | 199 | 0.98 | delay 24.7 vs 74.7 |
 | Energy-gradient relay (#5) | 2480 / 2233 | 0.82× / 0.73× | 986 / 1238 | 1.00 | raises per-round cost |
 | Selective dual-terminus (#7) | 3055 / 2815 | 1.01× / 0.93× | 343 / 195 | 0.96 / 0.98 | failover rarely fires |
+| Local chain repair (splice) | 2903 ± 150 | 0.96× | 493 | 0.98 | 99% fewer rebuilds; tail dies earlier |
+| Sleep subset f=0.7 (3 seeds) | 1998 | 0.66× | 1114 | 1.00 | sticky election strands energy |
 
 The energy-gradient relay (RACR-style residual-energy / distance / progress
 next-hop score) spreads load — FND rises to 986–1238 — but its greedy local
@@ -533,6 +535,16 @@ from baseline (1.01×): near end-of-life the vice is also depleted, so the
 failover almost never triggers. Per-class curves confirm heterogeneity works as
 intended — in the dual-terminus run, normal nodes die at ~356 while advanced
 nodes survive to ~1113.
+
+Local chain repair (splice a single dead node out of the cached order instead
+of a full MST rebuild) replaces 99% of rebuilds and runs 7.4× faster at N=500,
+but the spliced chains skip re-optimization: FND is unchanged at 493 while the
+tail dies earlier (0.96×, 20 seeds). It is kept as an eval accelerator, not a
+protocol change. The rotating sleep subset (top-f by election score awake, rest
+at 5% idle) fails decisively at every fraction (0.66× at f=0.7, 3 seeds): the
+score election is sticky, so a core set serves until burnout while sleepers
+strand hoarded energy, and energy-per-delivered-report is far worse (677 µJ vs
+456 µJ) even though FND rises to 1114 with perfect awake-PDR.
 
 ### 12.2 The mechanism that DOES: rotating relay-sink tier
 
@@ -632,7 +644,30 @@ popular next-step mechanisms do not displace a clean baseline, and (b) a
 positive, scale-robust 1.50× mechanism (rotating relay tier) with honest
 infrastructure accounting. Scripts and raw JSON results: `cch_experimental.py`,
 `cch_relaysink.py`, `eval_experimental.py`, `eval_dualterminus.py`,
-`eval_relaysink.py`, `eval_relayrotation.py`, `eval_relayscale.py`.
+`eval_relaysink.py`, `eval_relayrotation.py`, `eval_relayscale.py`,
+`cch_localrepair.py`, `eval_localrepair.py`, `eval_lr_canonical.py`,
+`cch_sleep.py`, `eval_sleep.py`, `cch_aggregation.py`, `eval_aggregation.py`.
+
+### 12.6 Fusion-traffic robustness
+
+Data fusion compresses correlated reports, but the benchmark traffic model
+sends full packets every hop. Scaling every payload charge by α∈{1.0, 0.9, 0.7}
+for *both* sides (3 seeds, N=100, K=1) tests whether the margin is a
+zero-compression artefact:
+
+| α | PEGASIS LAST | CCH-K1 LAST | margin |
+|---|---|---|---|
+| 1.0 | 2279 | 3017 | ×1.32 |
+| 0.9 | 2529 | 3350 | ×1.32 |
+| 0.7 | 3250 | 3884 | ×1.20 |
+
+Fusion lifts all lifetimes but compresses the margin: PEGASIS gains
+proportionally more (+43%) than CCH-K1 (+29%), because its long greedy links
+hold more shrinkable tx cost while CCH's MST links are already near-minimal.
+The edge holds through realistic fusion (α=0.9) with a known boundary at
+extreme fusion — a robustness result, not an efficiency gain. Harness:
+additive `PAYLOAD_SCALE` in `energy.py` (default 1.0, bit-identical; full fast
+suite green).
 
 ---
 
@@ -662,6 +697,12 @@ infrastructure accounting. Scripts and raw JSON results: `cch_experimental.py`,
 - `eval_experimental.py`, `eval_dualterminus.py`, `eval_relaysink.py`,
   `eval_relayrotation.py`, `eval_relayscale.py` — ablation harnesses
   (aforementioned mechanisms + scale robustness) with matching `.json` results.
+- `cch_localrepair.py`, `eval_localrepair.py`, `eval_lr_canonical.py`,
+  `cch_sleep.py`, `eval_sleep.py`, `cch_aggregation.py`,
+  `eval_aggregation.py` (+ matching `.json`) — splice-repair, sleep-subset,
+  and fusion-traffic harnesses behind §12.1/§12.6 with unit tests
+  (`tests/test_localrepair.py`, `tests/test_aggregation.py`,
+  `tests/test_sleep.py`). `energy.py` carries additive `PAYLOAD_SCALE`.
 - `eval_significance.py` → `eval_significance.json` — per-seed LAST/PDR/DELAY
   plus paired t-test + Wilcoxon results behind §9.6 (dependency-free stats,
   validated against textbook values).
