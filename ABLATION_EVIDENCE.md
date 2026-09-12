@@ -34,12 +34,24 @@ ClusterChain-H multichain K=1 design under the project's fixed benchmark.
 - `eval_localrepair.json`, `eval_lr_canonical.json`: results.
 - `tests/test_localrepair.py`: 6 fast unit tests (splice positions,
                             fallback cases, pre-death trajectory identity).
+- `cch_aggregation.py`      : fusion-traffic harness (`agg(alpha)`
+                            context manager scaling every tx/rx/da charge;
+                            restores 1.0 after the block).
+- `eval_aggregation.py`     : margin-vs-alpha robustness curve
+                            (CCH-K1 vs PEGASIS at alpha 1.0/0.9/0.7).
+- `eval_aggregation.json`   : results.
+- `tests/test_aggregation.py`: 5 fast unit tests (restore semantics,
+                            linearity, alpha=1.0 trajectory identity,
+                            energy proportionality).
+- `energy.py`               : additive `PAYLOAD_SCALE` (default 1.0,
+                            bit-identical; full fast suite green).
 
 ## Reproduce
     python eval_experimental.py
     python eval_dualterminus.py
     python eval_localrepair.py
     python -u eval_lr_canonical.py
+    python -u eval_aggregation.py
 
 ## Results (mean LAST, xPEG = ratio vs CCH-K1)
 | protocol                     |   LAST | xPEG  |
@@ -52,6 +64,13 @@ ClusterChain-H multichain K=1 design under the project's fixed benchmark.
 | DT-K3 (dual-term, K=3)       | 2815   | 0.93  |
 | LR-K1 (local chain repair)   | 2903   | 0.96  |
 
+## Robustness: margin under fusion traffic (3 seeds, N=100, K=1)
+| alpha | PEGASIS LAST | CCH-K1 LAST | margin |
+|-------|--------------|-------------|--------|
+| 1.0   | 2279         | 3017        | x1.32  |
+| 0.9   | 2529         | 3350        | x1.32  |
+| 0.7   | 3250         | 3884        | x1.20  |
+
 ## Conclusion
 Neither literature-prescribed mechanism beats the existing MST-geometry
 multichain K=1 design:
@@ -63,5 +82,11 @@ multichain K=1 design:
 - Local chain repair replaces 99% of rebuilds and runs 7.4x faster at N=500,
   but spliced chains skip re-optimization and the tail dies earlier (0.96x,
   FND unchanged at 493). Kept as an eval accelerator, not a protocol change.
+- Fusion traffic lifts all lifetimes but compresses the margin: PEGASIS gains
+  proportionally more (+43% at alpha=0.7) than CCH-K1 (+29%), because its
+  long greedy links hold more shrinkable tx cost while CCH's MST links are
+  already near-minimal. Margin holds at x1.32 through alpha=0.9 and touches
+  x1.20 at alpha=0.7 — the edge is real under realistic fusion, with a known
+  boundary at extreme fusion.
 Per-class curves confirm heterogeneity works as intended: in DT-K1, normal
 nodes die at round ~356 while advanced nodes survive to ~1113.
