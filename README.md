@@ -141,8 +141,8 @@ Every result in this repo is reproducible from a fixed seed set with **both** RN
 
 **Environment**
 - Python 3.11+ (developed on CPython 3.11.15)
-- Pure-Python dependencies only: `numpy`, `matplotlib` (no compiled extensions)
-- Install: `pip install numpy matplotlib`
+- Dependencies: `numpy<2`, `matplotlib>=3.7`, `pillow>=10`
+- Install: `pip install -r requirements.txt`
 
 **Run order (each script is self-contained and prints its own table)**
 
@@ -156,7 +156,7 @@ Every result in this repo is reproducible from a fixed seed set with **both** RN
 | `python eval_significance.py` | `eval_significance.json` | Paired t-test + Wilcoxon (per-seed, n=20) behind every headline gap; dependency-free. |
 | `python gen_scalability_fig.py` | `scalability.png` | Plots the N=100/200/500 scalability trend from the coupled-seed numbers above (no re-simulation). Use this for the figure. |
 | `python scenarios.py` | `range_impact.png`, `energy_consumption.png` | Communication-range sensitivity + cumulative energy plots. |
-| `python -m pytest tests` | — | 7 tests: all protocols run, lifetimes match, relay mode beats PEGASIS. |
+| `python -m pytest tests` | — | 33 tests: all protocols run, lifetimes match, relay mode beats PEGASIS. |
 
 **Verification:** after running `canonical_eval.py` you should see
 `CCH-K1 = 3038 ± 127`, `PEGASIS = 2291 ± 41`, `H-PEGASIS = 3084 ± 120`

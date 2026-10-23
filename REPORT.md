@@ -681,7 +681,7 @@ suite green).
   k-means (the paper's Canopy pre-clustering is omitted); PSOCH ports the PSO
   CH-selection component (the paper's joint routing-path particle encoding is
   omitted). Both use the shared energy model and identical budget/seeds.
-- `tests/test_protocols.py` — 7 regression tests (all pass).
+- `tests/` — 33 regression tests (all pass).
 - `dashboard_gen.py` — focused LEACH/PEGASIS/ClusterChain-H dashboard + death
   timeline.
 - `scenarios.py` — communication-range sensitivity + energy-consumption plots.
